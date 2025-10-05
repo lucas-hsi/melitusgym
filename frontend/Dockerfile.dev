@@ -1,0 +1,27 @@
+FROM node:18-alpine
+
+# Install dependencies for native modules
+RUN apk add --no-cache libc6-compat
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first
+COPY package.json package-lock.json* ./
+
+# Clear npm cache and install dependencies
+RUN npm cache clean --force && npm install
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Set environment variables
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV development
+ENV PATH /app/node_modules/.bin:$PATH
+
+# Start development server with host binding
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"]

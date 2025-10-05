@@ -1,0 +1,295 @@
+PS C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend> npm run build 
+
+> healthtrack-pro-frontend@1.0.0 build
+> next build
+
+  ▲ Next.js 14.2.33
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+ ✓ Linting and checking validity of types    
+ ✓ Collecting page data
+   Generating static pages (0/12)  [=   ]ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/treino". Read more: https://nextjs.org/docs/messages/prerender-error    
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/dashboard". Read more: https://nextjs.org/docs/messages/prerender-error 
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/saude". Read more: https://nextjs.org/docs/messages/prerender-error     
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/configuracoes". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/nutricao". Read more: https://nextjs.org/docs/messages/prerender-error  
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/register". Read more: https://nextjs.org/docs/messages/prerender-error  
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/configuracoes/alarmes". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/_not-found". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011) {
+  digest: '1057048644'
+}
+
+Error occurred prerendering page "/login". Read more: https://nextjs.org/docs/messages/prerender-error     
+
+ReferenceError: window is not defined
+    at 57013 (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\chunks\208.js:1:6172)
+    at Object.t [as require] (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\.next\server\webpack-runtime.js:1:143)
+    at require (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:16:18839)
+    at I (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:94364)
+    at C (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:92915)
+    at rR (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:33975)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:62305)
+    at nM (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61157)
+    at nN (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64547)
+    at nI (C:\Users\lucas\OneDrive\Área de Trabalho\Melitus Gym\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47011)
+ ✓ Generating static pages (12/12)
+
+> Export encountered errors on following paths:
+        /_not-found/page: /_not-found
+        /configuracoes/alarmes/page: /configuracoes/alarmes
+        /configuracoes/page: /configuracoes
+        /dashboard/page: /dashboard
+        /login/page: /login
+        /nutricao/page: /nutricao
+        /page: /
+        /register/page: /register
+        /saude/page: /saude
+        /treino/page: /treino
