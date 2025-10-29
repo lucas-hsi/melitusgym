@@ -41,15 +41,17 @@ app = FastAPI(
     },
 )
 
-# Configurar CORS
+"""
+Configuração de CORS
+- Lê origens permitidas da variável de ambiente `CORS_ORIGINS` (separadas por vírgula)
+- Mantém fallback seguro para ambiente local
+"""
+cors_origins_env = os.getenv("CORS_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000")
+allow_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000"
-    ],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=[

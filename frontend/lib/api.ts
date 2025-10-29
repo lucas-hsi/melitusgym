@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+// Usar variável de ambiente para baseURL, com fallback local
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -26,9 +27,12 @@ const processQueue = (error: any, token: string | null = null) => {
 // Interceptor para adicionar token automaticamente
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Evitar acesso ao localStorage no SSR
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -75,10 +79,12 @@ api.interceptors.response.use(
         }
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem("token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("auth_user");
-        window.location.href = "/login";
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem("token");
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("auth_user");
+          window.location.href = "/login";
+        }
       } finally {
         isRefreshing = false;
       }

@@ -3,14 +3,17 @@ import axios from 'axios';
 // Configuração global do axios
 const setupAxiosInterceptors = () => {
   // Configurar baseURL padrão
-  axios.defaults.baseURL = 'http://127.0.0.1:8000/api';
+  axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
   
   // Interceptor para adicionar token automaticamente
   axios.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      // Evitar acesso ao localStorage durante SSR
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
       return config;
     },

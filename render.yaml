@@ -1,0 +1,81 @@
+# Render Blueprint for Melitus Gym
+# This file defines the infrastructure for deploying the application on Render
+
+services:
+  # Backend API Service
+  - type: web
+    name: melitus-gym-backend
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: ./backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: melitus-gym-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "https://melitus-gym-frontend.onrender.com,http://localhost:3000"
+      - key: FDC_API_KEY
+        sync: false  # Set manually in Render dashboard
+    healthCheckPath: /api/health
+    
+  # Frontend Web Service
+  - type: web
+    name: melitus-gym-frontend
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: ./frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: "https://melitus-gym-backend.onrender.com/api"
+      - key: NODE_ENV
+        value: production
+    
+# Database
+databases:
+  - name: melitus-gym-db
+    plan: free
+    region: oregon
+    databaseName: melitus_gym
+    user: melitus_user
+    
+# Environment Groups (optional - for shared environment variables)
+envVarGroups:
+  - name: melitus-gym-shared
+    envVars:
+      - key: APP_NAME
+        value: "Melitus Gym"
+      - key: APP_VERSION
+        value: "1.0.0"
+      - key: ENVIRONMENT
+        value: "production"
+      - key: LOG_LEVEL
+        value: "INFO"
+        
+# Static Sites (if needed for documentation)
+# - type: static
+#   name: melitus-gym-docs
+#   buildCommand: echo "No build needed"
+#   staticPublishPath: ./docs
+#   pullRequestPreviewsEnabled: false
+
+# Additional Configuration Notes:
+# 1. Set FDC_API_KEY manually in Render dashboard for security
+# 2. Database will be automatically created with the specified configuration
+# 3. Services will auto-deploy on push to main branch
+# 4. Free tier limitations:
+#    - Services sleep after 15 minutes of inactivity
+#    - 750 hours/month of runtime
+#    - Database storage limited to 1GB
+# 5. Health check endpoint should be implemented in FastAPI backend
+# 6. CORS origins should include the frontend URL for API access
