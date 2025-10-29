@@ -57,14 +57,40 @@ async def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session)
 ):
-    """Autentica usuário e retorna token JWT"""
+    """Autentica usuário e retorna token JWT. Cria usuário automaticamente se nenhum existir."""
     user = AuthService.authenticate_user(session, form_data.username, form_data.password)
+    
+    # Se usuário não existe, verificar se é o primeiro usuário do sistema
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        # Verificar se já existe algum usuário no sistema
+        statement = select(User)
+        existing_user = session.exec(statement).first()
+        
+        if not existing_user:
+            # Primeiro usuário do sistema - criar automaticamente
+            hashed_password = AuthService.get_password_hash(form_data.password)
+            
+            # Extrair nome do email (parte antes do @)
+            nome = form_data.username.split('@')[0].title()
+            
+            new_user = User(
+                nome=nome,
+                email=form_data.username,
+                hashed_password=hashed_password
+            )
+            
+            session.add(new_user)
+            session.commit()
+            session.refresh(new_user)
+            
+            user = new_user
+        else:
+            # Já existe usuário, credenciais incorretas
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     
     access_token_expires = timedelta(minutes=30)
     access_token = AuthService.create_access_token(

@@ -43,7 +43,7 @@ export default function RegisterPage() {
 
     try {
       const registerData = {
-        username: formData.username,
+        nome: formData.username,
         email: formData.email,
         password: formData.password
       }
@@ -64,6 +64,12 @@ export default function RegisterPage() {
         const errorDetail = err.response.data.detail
         if (typeof errorDetail === 'string') {
           setError(errorDetail)
+          // Se for erro de sistema single-user, redirecionar para login após 3 segundos
+          if (errorDetail.includes('usuário único')) {
+            setTimeout(() => {
+              router.push('/login')
+            }, 3000)
+          }
         } else if (Array.isArray(errorDetail)) {
           setError(errorDetail.map(e => e.msg || e).join(', '))
         } else {

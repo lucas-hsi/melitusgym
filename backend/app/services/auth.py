@@ -119,5 +119,5 @@ def prevent_multiple_registrations(session: Session) -> None:
     if check_existing_user(session):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Registration is not allowed. User already exists in the system."
+            detail="Sistema configurado para usuário único. Use o login para acessar sua conta existente."
         )
