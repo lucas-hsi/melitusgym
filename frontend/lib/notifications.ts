@@ -20,7 +20,16 @@ async function initializeFirebase() {
   if (typeof window === 'undefined' || app) return;
   
   const { initializeApp } = await import('firebase/app');
-  const { getMessaging } = await import('firebase/messaging');
+  const { getMessaging, isSupported } = await import('firebase/messaging');
+  
+  // Evitar inicialização em ambientes inseguros ou sem suporte
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const isSecure = typeof window !== 'undefined' && (window.isSecureContext || isLocalhost);
+  const supported = await isSupported().catch(() => false);
+  if (!isSecure || !supported) {
+    console.warn('Firebase Messaging não suportado ou contexto inseguro. Pulando inicialização.');
+    return;
+  }
   
   app = initializeApp(firebaseConfig);
   messaging = getMessaging(app);
@@ -98,14 +107,29 @@ export async function getFCMToken(): Promise<string | null> {
   }
   
   try {
-    const { getToken } = await import('firebase/messaging');
+    const { getToken, isSupported } = await import('firebase/messaging');
     const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-    if (!vapidKey) {
-      console.warn('VAPID key não configurada');
+    const supported = await isSupported().catch(() => false);
+    const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    const isSecure = typeof window !== 'undefined' && (window.isSecureContext || isLocalhost);
+    
+    // Gate forte para evitar InvalidAccessError em dev ou sem chave válida
+    if (!supported || !isSecure) {
+      console.warn('Push/FCM não suportado ou contexto não seguro. Ignorando token.');
+      return null;
+    }
+    if (!vapidKey || vapidKey.trim().length < 80) { // base64url típica tem tamanho alto
+      console.warn('VAPID key ausente ou inválida. Ignorando token.');
       return null;
     }
     
-    const token = await getToken(messaging, { vapidKey });
+    const token = await getToken(messaging, { vapidKey }).catch((err: any) => {
+      if (err && (err.name === 'InvalidAccessError' || String(err).includes('InvalidAccessError'))) {
+        console.warn('InvalidAccessError ao obter token FCM. Ignorando e desativando notificações.');
+        return null;
+      }
+      throw err;
+    });
     console.log('FCM Token obtido:', token);
     return token;
   } catch (error) {
@@ -164,6 +188,13 @@ export async function initializeNotifications(): Promise<{
   error?: string;
 }> {
   try {
+    // Em desenvolvimento, desativar notificações para evitar erros de terminal
+    if (process.env.NODE_ENV !== 'production') {
+      return {
+        success: false,
+        error: 'Notificações desativadas em desenvolvimento'
+      };
+    }
     // 1. Verificar suporte
     if (!isNotificationSupported()) {
       return {
@@ -195,7 +226,7 @@ export async function initializeNotifications(): Promise<{
     if (!token) {
       return {
         success: false,
-        error: 'Falha ao obter token FCM'
+        error: 'Falha ao obter token FCM (chave VAPID ausente/ambiente inseguro)'
       };
     }
     

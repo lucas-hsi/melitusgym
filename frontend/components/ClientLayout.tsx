@@ -4,7 +4,6 @@ import React from 'react';
 import { useDeepLinks } from '@/hooks/useDeepLinks';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { useNotifications } from '@/lib/notifications';
-import ServiceWorkerRegistration from './ServiceWorkerRegistration';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -28,7 +27,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   
   return (
     <>
-      <ServiceWorkerRegistration />
       {children}
       <PWAInstallPrompt />
     </>

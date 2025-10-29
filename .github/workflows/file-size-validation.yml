@@ -1,0 +1,64 @@
+name: File Size Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate-file-sizes:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check for large files
+      run: |
+        echo "Checking for files larger than 10MB..."
+        large_files=$(find . -type f -size +10M -not -path './.git/*' -not -path './node_modules/*' -not -path './.next/*' -not -path './backend/__pycache__/*')
+        
+        if [ -n "$large_files" ]; then
+          echo "❌ Large files found (>10MB):"
+          echo "$large_files"
+          echo ""
+          echo "Please remove these files or add them to .gitignore"
+          exit 1
+        else
+          echo "✅ No large files found"
+        fi
+        
+    - name: Check for build artifacts
+      run: |
+        echo "Checking for build artifacts that should be ignored..."
+        artifacts_found=false
+        
+        # Check for common build artifacts
+        if [ -d "frontend/node_modules" ]; then
+          echo "❌ frontend/node_modules directory found"
+          artifacts_found=true
+        fi
+        
+        if [ -d "frontend/.next" ]; then
+          echo "❌ frontend/.next directory found"
+          artifacts_found=true
+        fi
+        
+        if [ -d "backend/__pycache__" ]; then
+          echo "❌ backend/__pycache__ directory found"
+          artifacts_found=true
+        fi
+        
+        if [ -f "frontend/package-lock.json" ] && [ -f "package-lock.json" ]; then
+          echo "❌ Duplicate package-lock.json files found"
+          artifacts_found=true
+        fi
+        
+        if [ "$artifacts_found" = true ]; then
+          echo ""
+          echo "Build artifacts should not be committed. Please add them to .gitignore"
+          exit 1
+        else
+          echo "✅ No build artifacts found in repository"
+        fi

@@ -15,6 +15,10 @@ declare global {
 
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
+    // Registrar apenas em produção para evitar prompts durante o desenvolvimento
+    if (process.env.NODE_ENV !== 'production') {
+      return;
+    }
     if ('serviceWorker' in navigator) {
       registerServiceWorker();
     }
@@ -23,12 +27,24 @@ export default function ServiceWorkerRegistration() {
   const registerServiceWorker = async () => {
     try {
       console.log('[SW] Registering service worker...');
-      
-      const registration = await navigator.serviceWorker.register('/sw.js', {
+      // Usar o mesmo caminho do provider central
+      const registration = await navigator.serviceWorker.register('/service-worker.js', {
         scope: '/'
       });
       
       console.log('[SW] Service worker registered successfully:', registration);
+
+      // Reload only when the new service worker takes control
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        // Evitar reload imediato durante navegação (ex.: /login)
+        // Aguarda um pequeno intervalo para finalizar requisições em curso
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
+      });
       
       // Handle updates
       registration.addEventListener('updatefound', () => {
@@ -37,8 +53,8 @@ export default function ServiceWorkerRegistration() {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               console.log('[SW] New service worker available');
-              // Optionally show update notification to user
-              showUpdateNotification();
+              // Notificar usuário e acionar atualização de forma segura
+              showUpdateNotification(registration);
             }
           });
         }
@@ -70,10 +86,27 @@ export default function ServiceWorkerRegistration() {
     console.log('[SW] Requested pre-caching of model assets');
   };
   
-  const showUpdateNotification = () => {
-    // Simple notification - could be enhanced with a toast component
-    if (window.confirm('Nova versão disponível! Deseja atualizar?')) {
-      window.location.reload();
+  const showUpdateNotification = (registration: ServiceWorkerRegistration) => {
+    // Evitar repetição: mostrar apenas uma vez por sessão
+    const sessionKey = 'sw_update_prompted';
+    const dismissedKey = 'sw_update_dismissed';
+    if (sessionStorage.getItem(sessionKey) || sessionStorage.getItem(dismissedKey)) {
+      return;
+    }
+    sessionStorage.setItem(sessionKey, '1');
+
+    // Delegar ao fluxo central: abrir modal através do Provider
+    // O Provider escuta a detecção e abre o modal; aqui garantimos o evento
+    try {
+      window.dispatchEvent(new Event('sw-new-version'));
+    } catch (e) {
+      console.log('[SW] Nova versão detectada. Aguarde prompt de atualização.');
+    }
+
+    // Como fallback, se o modal não estiver ativo, permitir atualizar manualmente
+    // (não bloquear com confirm para evitar loop)
+    if (registration.waiting) {
+      // O modal dispara 'sw-skip-waiting'; se não vier, manter sem ação
     }
   };
   

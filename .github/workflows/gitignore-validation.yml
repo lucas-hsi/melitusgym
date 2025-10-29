@@ -1,0 +1,74 @@
+name: .gitignore Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate-gitignore:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check .gitignore exists
+      run: |
+        if [ ! -f ".gitignore" ]; then
+          echo "❌ .gitignore file not found"
+          exit 1
+        else
+          echo "✅ .gitignore file exists"
+        fi
+        
+    - name: Validate .gitignore content
+      run: |
+        echo "Validating .gitignore content..."
+        missing_patterns=()
+        
+        # Required patterns for Node.js/Next.js
+        required_patterns=(
+          "node_modules/"
+          ".next/"
+          ".env.local"
+          "*.log"
+          "__pycache__/"
+          "*.pyc"
+          ".DS_Store"
+          "Thumbs.db"
+        )
+        
+        for pattern in "${required_patterns[@]}"; do
+          if ! grep -q "$pattern" .gitignore; then
+            missing_patterns+=("$pattern")
+          fi
+        done
+        
+        if [ ${#missing_patterns[@]} -gt 0 ]; then
+          echo "❌ Missing required patterns in .gitignore:"
+          printf '%s\n' "${missing_patterns[@]}"
+          echo ""
+          echo "Please add these patterns to your .gitignore file"
+          exit 1
+        else
+          echo "✅ All required patterns found in .gitignore"
+        fi
+        
+    - name: Check for tracked files that should be ignored
+      run: |
+        echo "Checking for tracked files that should be ignored..."
+        
+        # Check if any files match .gitignore patterns but are still tracked
+        tracked_ignored_files=$(git ls-files | git check-ignore --stdin || true)
+        
+        if [ -n "$tracked_ignored_files" ]; then
+          echo "❌ Found tracked files that match .gitignore patterns:"
+          echo "$tracked_ignored_files"
+          echo ""
+          echo "These files should be untracked. Run: git rm --cached <file>"
+          exit 1
+        else
+          echo "✅ No tracked files found that should be ignored"
+        fi

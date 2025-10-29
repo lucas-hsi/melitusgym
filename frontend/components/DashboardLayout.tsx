@@ -100,6 +100,7 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
                 {/* Home Button */}
                 <Link
                   href="/dashboard"
+                  prefetch={false}
                   className="text-gray-300 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10 hover:scale-105"
                   title="Voltar ao Dashboard"
                 >

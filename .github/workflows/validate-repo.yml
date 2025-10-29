@@ -1,0 +1,156 @@
+name: Repository Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate-files:
+    runs-on: ubuntu-latest
+    name: Validate Repository Structure
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check for large files (>10MB)
+      run: |
+        echo "Checking for files larger than 10MB..."
+        large_files=$(find . -type f -size +10M -not -path './.git/*' 2>/dev/null || true)
+        if [ -n "$large_files" ]; then
+          echo "❌ Large files found (>10MB):"
+          echo "$large_files"
+          exit 1
+        else
+          echo "✅ No large files found"
+        fi
+        
+    - name: Check for build artifacts
+      run: |
+        echo "Checking for build artifacts that should be ignored..."
+        artifacts_found=false
+        
+        # Check for node_modules
+        if [ -d "node_modules" ] || [ -d "frontend/node_modules" ]; then
+          echo "❌ node_modules directory found"
+          artifacts_found=true
+        fi
+        
+        # Check for .next build directory
+        if [ -d ".next" ] || [ -d "frontend/.next" ]; then
+          echo "❌ .next build directory found"
+          artifacts_found=true
+        fi
+        
+        # Check for Python cache
+        if find . -name "__pycache__" -type d | grep -q .; then
+          echo "❌ __pycache__ directories found"
+          artifacts_found=true
+        fi
+        
+        # Check for .pyc files
+        if find . -name "*.pyc" -type f | grep -q .; then
+          echo "❌ .pyc files found"
+          artifacts_found=true
+        fi
+        
+        # Check for duplicate package-lock.json
+        if [ -f "package-lock.json" ]; then
+          echo "❌ package-lock.json found in root (should only be in frontend/)"
+          artifacts_found=true
+        fi
+        
+        if [ "$artifacts_found" = true ]; then
+          echo "Build artifacts found that should be in .gitignore"
+          exit 1
+        else
+          echo "✅ No build artifacts found"
+        fi
+        
+    - name: Validate .gitignore exists
+      run: |
+        if [ ! -f ".gitignore" ]; then
+          echo "❌ .gitignore file not found"
+          exit 1
+        else
+          echo "✅ .gitignore file exists"
+        fi
+        
+    - name: Check .gitignore patterns
+      run: |
+        echo "Checking .gitignore for required patterns..."
+        missing_patterns=()
+        
+        required_patterns=(
+          "node_modules/"
+          ".next/"
+          ".env.local"
+          "*.log"
+          "__pycache__/"
+          "*.pyc"
+          ".DS_Store"
+          "Thumbs.db"
+        )
+        
+        for pattern in "${required_patterns[@]}"; do
+          if ! grep -q "$pattern" .gitignore; then
+            missing_patterns+=("$pattern")
+          fi
+        done
+        
+        if [ ${#missing_patterns[@]} -gt 0 ]; then
+          echo "❌ Missing required .gitignore patterns:"
+          printf '%s\n' "${missing_patterns[@]}"
+          exit 1
+        else
+          echo "✅ All required .gitignore patterns found"
+        fi
+        
+    - name: Check for tracked files that should be ignored
+      run: |
+        echo "Checking for tracked files that match .gitignore patterns..."
+        
+        # Get list of tracked files
+        tracked_files=$(git ls-files)
+        
+        # Check against common patterns that should be ignored
+        violations_found=false
+        
+        # Check for node_modules files
+        if echo "$tracked_files" | grep -q "node_modules/"; then
+          echo "❌ node_modules files are being tracked"
+          violations_found=true
+        fi
+        
+        # Check for .next files
+        if echo "$tracked_files" | grep -q "\.next/"; then
+          echo "❌ .next build files are being tracked"
+          violations_found=true
+        fi
+        
+        # Check for __pycache__ files
+        if echo "$tracked_files" | grep -q "__pycache__"; then
+          echo "❌ __pycache__ files are being tracked"
+          violations_found=true
+        fi
+        
+        # Check for .pyc files
+        if echo "$tracked_files" | grep -q "\.pyc$"; then
+          echo "❌ .pyc files are being tracked"
+          violations_found=true
+        fi
+        
+        # Check for log files
+        if echo "$tracked_files" | grep -q "\.log$"; then
+          echo "❌ .log files are being tracked"
+          violations_found=true
+        fi
+        
+        if [ "$violations_found" = true ]; then
+          echo "Files that should be ignored are still being tracked"
+          exit 1
+        else
+          echo "✅ No ignored files are being tracked"
+        fi

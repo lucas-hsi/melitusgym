@@ -12,10 +12,10 @@ export default function Home() {
 
     if (token) {
       // Se há token, redirecionar para o dashboard único
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } else {
       // Se não há token, redirecionar para login
-      router.push('/login');
+      router.replace('/login');
     }
   }, [router]);
 
