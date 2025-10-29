@@ -127,8 +127,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -144,6 +144,10 @@ PIPFILE.lock
 *.sqlite
 *.sqlite3
 healthtrack.db
+
+# Allow tracking specific frontend lib files
+!frontend/lib/api.ts
+!frontend/lib/axios-config.ts
 
 # Docker
 .dockerignore
