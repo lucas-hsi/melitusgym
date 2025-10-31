@@ -80,14 +80,16 @@ setup_exception_handlers(app)
 """
 Configuração de CORS
 - Lê origens permitidas das variáveis de ambiente `ALLOWED_ORIGINS` ou `CORS_ORIGINS` (separadas por vírgula)
-- Mantém fallback seguro para ambiente local
+- Em produção, se não configurado via env, usa exatamente o domínio do frontend
+- Em desenvolvimento, mantém fallback para localhost
 """
-cors_origins_env = (
-    os.getenv("ALLOWED_ORIGINS")
-    or os.getenv("CORS_ORIGINS")
-    or "http://127.0.0.1:3000,http://localhost:3000"
-)
-allow_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+cors_env = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS")
+if not cors_env:
+    if os.getenv("ENVIRONMENT") == "production":
+        cors_env = "https://tranquil-vitality-production-15a2.up.railway.app"
+    else:
+        cors_env = "http://127.0.0.1:3000,http://localhost:3000"
+allow_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
 
 logger.info(f"CORS configurado para: {allow_origins}")
 

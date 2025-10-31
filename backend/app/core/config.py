@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     cors_origins: List[str] = [
         "http://127.0.0.1:3000",
         "http://localhost:3000",
-        "https://melitusgym.vercel.app"
+        "https://tranquil-vitality-production-15a2.up.railway.app"
     ]
     
     # Logging
