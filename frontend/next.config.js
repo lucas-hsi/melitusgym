@@ -2,7 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   images: {
-    domains: ['localhost', 'api.nutritionix.com', 'melitusgym-backend.onrender.com'],
+    domains: ['localhost', 'api.nutritionix.com', 'melitusgym-production.up.railway.app'],
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,

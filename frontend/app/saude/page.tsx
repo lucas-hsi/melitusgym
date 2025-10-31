@@ -599,3 +599,4 @@ export default function SaudePage() {
     </LayoutBase>
   );
 }
+export const dynamic = 'force-dynamic'

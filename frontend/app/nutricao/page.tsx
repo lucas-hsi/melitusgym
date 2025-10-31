@@ -807,3 +807,4 @@ export default function NutricaoPage() {
     </LayoutBase>
   );
 }
+export const dynamic = 'force-dynamic'

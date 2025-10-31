@@ -287,3 +287,4 @@ export default function TreinoPage() {
     </LayoutBase>
   );
 }
+export const dynamic = 'force-dynamic'

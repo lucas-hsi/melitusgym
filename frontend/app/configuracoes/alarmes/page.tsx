@@ -517,3 +517,4 @@ export default function AlarmsPage() {
     </div>
   );
 }
+export const dynamic = 'force-dynamic'

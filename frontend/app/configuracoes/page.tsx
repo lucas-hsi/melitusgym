@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = 'force-dynamic'
 import { useState } from "react";
 import LayoutBase from "@/components/layout/LayoutBase";
 import { useHealth } from "@/contexts/HealthContext";

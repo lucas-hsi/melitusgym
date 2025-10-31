@@ -6,8 +6,7 @@ Este documento contém todas as instruções para fazer o deploy do Melitus Gym 
 
 ### Contas Necessárias
 - [x] GitHub (para versionamento)
-- [x] Vercel (para frontend)
-- [x] Render/Railway (para backend + PostgreSQL)
+- [x] Railway (frontend + backend + PostgreSQL)
 - [ ] Domínio personalizado (opcional)
 
 ### Ferramentas Locais
@@ -111,41 +110,30 @@ curl -X POST https://melitusgym-production.up.railway.app/api/auth/login \
 
 ## 🎨 Configuração do Frontend
 
-### 1. Deploy na Vercel
+### 1. Deploy na Railway (SSR)
 
-1. **Instalar Vercel CLI:**
-   ```bash
-   npm install -g vercel
-   ```
+Hospede o Next.js como aplicação SSR na Railway.
 
-2. **Login na Vercel:**
-   ```bash
-   vercel login
-   ```
+1. **Criar serviço Node (frontend) na Railway)**
+   - Root Directory: `./frontend`
+   - Build Command: `npm ci && npm run build`
+   - Start Command: `npm run start`
+   - Runtime: Node 18+
 
-3. **Deploy do frontend:**
-   ```bash
-   cd frontend
-   vercel --prod
-   ```
-
-4. **Configurar variáveis de ambiente na Vercel:**
-  ```env
-  NEXT_PUBLIC_API_URL=https://melitusgym-production.up.railway.app/api
-  ```
-
-### 2. Configuração de Domínio (Opcional)
-
-1. **Adicionar domínio personalizado na Vercel**
-2. **Configurar DNS:**
-   ```
-   CNAME: melitusgym -> cname.vercel-dns.com
-   ```
-
-3. **Atualizar CORS no backend:**
+2. **Variáveis de ambiente (frontend)**
    ```env
-   CORS_ORIGINS=["https://melitusgym.com", "https://melitusgym.vercel.app"]
+   NODE_ENV=production
+   NEXT_PUBLIC_API_URL=https://melitusgym-production.up.railway.app/api
    ```
+
+3. **Domínio**
+   - O serviço terá um domínio Railway, ex.: `https://tranquil-vitality-production-15a2.up.railway.app`
+   - Use este domínio no backend (`ALLOWED_ORIGINS`) para CORS.
+
+4. **Validação**
+   - Teste `GET /` para receber 200.
+   - Acesse `/login` e `/register` para confirmar que rotas SSR estão ativas.
+   - Se aparecer 404, verifique se não foi usado `next export` (use `npm run build` + `npm run start`).
 
 ## 🔄 CI/CD com GitHub Actions
 
@@ -158,10 +146,8 @@ Vá em **Settings > Secrets and variables > Actions** e adicione:
 RENDER_API_KEY=your_render_api_key
 RENDER_SERVICE_ID=your_service_id
 
-# Vercel
-VERCEL_TOKEN=your_vercel_token
-VERCEL_ORG_ID=your_org_id
-VERCEL_PROJECT_ID=your_project_id
+# Railway (se usar CLI para automação)
+RAILWAY_TOKEN=your_railway_token
 ```
 
 ### 2. Workflow Automático
