@@ -21,6 +21,9 @@ import {
 import * as tf from '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 
+// API Configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+
 interface FoodItem {
   id: string;
   name: string;
@@ -320,7 +323,7 @@ export default function NutricaoPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://127.0.0.1:8000/nutrition/foods?q=${encodeURIComponent(query)}&limit=10`, {
+      const response = await fetch(`${API_BASE_URL}/nutrition/foods?q=${encodeURIComponent(query)}&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -434,7 +437,7 @@ export default function NutricaoPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:8000/nutrition/analyze', {
+      const response = await fetch(`${API_BASE_URL}/nutrition/analyze`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

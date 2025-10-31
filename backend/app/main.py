@@ -118,11 +118,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     try:
+        from datetime import datetime
         # Verificar conexão com banco seria ideal aqui
         return JSONResponse(
             content={
-                "status": "healthy",
-                "timestamp": "2024-01-01T00:00:00Z",
+                "status": "ok",
+                "timestamp": datetime.now().isoformat(),
                 "version": "1.0.0",
                 "environment": os.getenv("ENVIRONMENT", "development")
             }

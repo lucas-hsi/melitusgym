@@ -155,7 +155,7 @@ function isStaticAsset(url) {
 }
 
 function isApiRequest(url) {
-  return url.includes('/api/') || url.includes('127.0.0.1:8000');
+  return url.includes('/api/') || url.includes('melitusgym-backend.onrender.com');
 }
 
 // Background sync for offline nutrition data
