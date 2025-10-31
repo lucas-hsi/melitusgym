@@ -14,18 +14,18 @@ export function ServiceWorkerProvider({ children }: ServiceWorkerProviderProps) 
   useEffect(() => {
     // Configurar Service Worker apenas no cliente
     if (typeof window !== 'undefined') {
-      setupServiceWorker(() => {
-        console.log('[SW Provider] Nova versão detectada, abrindo modal');
-        open();
-      });
+      // setupServiceWorker(() => {
+      //   console.log('[SW Provider] Nova versão detectada, abrindo modal');
+      //   open();
+      // });
       
       // Importar e configurar utilitários de desenvolvimento apenas no cliente
-      if (process.env.NODE_ENV === 'development') {
-        import('../lib/sw/dev-utils').then(() => {
-          console.log('🛠️ Modo desenvolvimento: Service Workers serão desregistrados');
-          console.log('💡 Use swDevUtils.status() para verificar o status dos SWs');
-        }).catch(console.error);
-      }
+      // if (process.env.NODE_ENV === 'development') {
+      //   import('../lib/sw/dev-utils').then(() => {
+      //     console.log('🛠️ Modo desenvolvimento: Service Workers serão desregistrados');
+      //     console.log('💡 Use swDevUtils.status() para verificar o status dos SWs');
+      //   }).catch(console.error);
+      // }
     }
   }, [open]);
 

@@ -5,7 +5,7 @@ import { AuthProvider } from '../contexts/AuthContext'
 import { HealthProvider } from '../contexts/HealthContext'
 import { QueryProvider } from '../providers/QueryProvider'
 import { ClientLayout } from '../components/ClientLayout'
-import { ServiceWorkerProvider } from '../components/ServiceWorkerProvider'
+// import { ServiceWorkerProvider } from '../components/ServiceWorkerProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -38,7 +38,7 @@ export default function RootLayout({
         <QueryProvider>
           <AuthProvider>
             <HealthProvider>
-              <ServiceWorkerProvider>
+              {/* <ServiceWorkerProvider> */}
                 <ClientLayout>
                   <div className="flex flex-col min-h-screen">
                     <main className="flex-1">
@@ -46,7 +46,7 @@ export default function RootLayout({
                     </main>
                   </div>
                 </ClientLayout>
-              </ServiceWorkerProvider>
+              {/* </ServiceWorkerProvider> */}
             </HealthProvider>
           </AuthProvider>
         </QueryProvider>
