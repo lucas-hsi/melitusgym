@@ -1,0 +1,25 @@
+
+# Copie estas vari�veis para o Railway Dashboard
+# ============================================
+
+# 1. No servi�o PostgreSQL:
+POSTGRES_DB=railway
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=[gerado automaticamente]
+POSTGRES_HOST=[gerado automaticamente]
+POSTGRES_PORT=5432
+
+# 2. No servi�o Backend:
+USE_SQLITE=false
+DATABASE_URL=postgresql://postgres:[password]@[host]:5432/railway
+JWT_SECRET_KEY=qp2Yovp4evdlwhSWIQHmuYIJoLNyknIB_sMIerAOFAM
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+ALLOWED_ORIGINS=https://tranquil-vitality-production-15a2.up.railway.app
+LOG_LEVEL=INFO
+DEBUG=false
+TIMEZONE=America/Sao_Paulo
+
+# Opcional:
+FDC_API_KEY=[sua_chave_fdc]
+FCM_CREDENTIALS_PATH=./firebase-credentials.json

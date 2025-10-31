@@ -48,8 +48,8 @@ FCM_CLIENT_EMAIL=firebase-adminsdk@your-project.iam.gserviceaccount.com
 O frontend requer as seguintes variáveis de ambiente:
 
 ```bash
-# Backend API - URL do backend no Render
-NEXT_PUBLIC_API_URL=https://melitus-gym-backend.onrender.com/api
+# Backend API - URL do backend na Railway
+NEXT_PUBLIC_API_URL=https://melitusgym-production.up.railway.app/api
 
 # Firebase (Push Notifications)
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
@@ -73,17 +73,17 @@ NODE_ENV=production
 
 O backend está configurado para aceitar requisições dos seguintes domínios:
 
-- `https://melitus-gym-frontend.onrender.com` (produção)
+- `https://tranquil-vitality-production-15a2.up.railway.app` (produção)
 - `http://localhost:3000` (desenvolvimento local)
 
-Para adicionar novos domínios, atualize a variável `ALLOWED_ORIGINS` no Render.
+Para adicionar novos domínios, atualize a variável `ALLOWED_ORIGINS` no provedor (Railway/Render).
 
 ### URLs de API
 
 #### Produção
-- **Backend**: `https://melitus-gym-backend.onrender.com`
-- **Frontend**: `https://melitus-gym-frontend.onrender.com`
-- **API Docs**: `https://melitus-gym-backend.onrender.com/docs` (desabilitado em produção)
+- **Backend**: `https://melitusgym-production.up.railway.app`
+- **Frontend**: `https://tranquil-vitality-production-15a2.up.railway.app`
+- **API Docs**: `https://melitusgym-production.up.railway.app/docs` (desabilitado em produção)
 
 #### Desenvolvimento Local
 - **Backend**: `http://127.0.0.1:8000`

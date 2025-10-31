@@ -67,7 +67,7 @@ app = FastAPI(
     redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None,
     contact={
         "name": "Melitus Gym API",
-        "url": "https://melitusgym-backend.onrender.com" if os.getenv("ENVIRONMENT") == "production" else "http://127.0.0.1:8000",
+        "url": "https://melitusgym-production.up.railway.app" if os.getenv("ENVIRONMENT") == "production" else "http://127.0.0.1:8000",
     },
     license_info={
         "name": "MIT",

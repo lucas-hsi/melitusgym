@@ -52,7 +52,7 @@ DATABASE_URL=postgresql://usuario:senha@host:porta/database
 
 # Segurança
 JWT_SECRET_KEY=sua_chave_secreta_muito_forte_aqui
-ALLOWED_ORIGINS=https://melitusgym.vercel.app
+ALLOWED_ORIGINS=https://tranquil-vitality-production-15a2.up.railway.app
 
 # APIs externas
 OPENAI_API_KEY=sua_chave_openai
@@ -66,7 +66,7 @@ FCM_CLIENT_EMAIL=firebase-adminsdk-xxxxx@projeto.iam.gserviceaccount.com
 
 ### 2. Frontend (.env.local)
 ```env
-NEXT_PUBLIC_API_URL=https://seu-backend.railway.app
+NEXT_PUBLIC_API_URL=https://melitusgym-production.up.railway.app/api
 NEXT_PUBLIC_ENVIRONMENT=production
 ```
 
