@@ -24,11 +24,17 @@ class AuthService:
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verifica se a senha está correta"""
+        # Trunca para 72 chars caso seja maior (limite do bcrypt)
+        if len(plain_password) > 72:
+            plain_password = plain_password[:72]
         return pwd_context.verify(plain_password, hashed_password)
     
     @staticmethod
     def get_password_hash(password: str) -> str:
         """Gera hash da senha"""
+        # Trunca para 72 chars caso seja maior (limite do bcrypt)
+        if len(password) > 72:
+            password = password[:72]
         return pwd_context.hash(password)
     
     @staticmethod
