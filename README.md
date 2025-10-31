@@ -207,4 +207,18 @@ O frontend é configurado como Progressive Web App (PWA) com:
 
 ## 🤝 Contribuição
 
-Este é um projeto pessoal para uso único do usuário Lucas. Não há sistema multiusuário.
+Este projeto agora suporta múltiplos usuários (multiusuário):
+ - Registro livre via `POST /api/auth/register` (bloqueio apenas por email já existente — retorna `409`).
+ - Login via `POST /api/auth/login` com JWT persistido no frontend.
+ 
+Admin Reset (uso inicial apenas):
+ - Endpoint: `POST /api/admin/reset-users`
+ - Segurança: requer header `X-Admin-Reset` com o valor de `ADMIN_RESET_TOKEN` e variável `ENABLE_ADMIN_RESET=true` no ambiente.
+ - Efeito: TRUNCATE `users` com `RESTART IDENTITY CASCADE` (apaga todos os usuários e reinicia IDs).
+ - Procedimento recomendado:
+   1. Habilite `ENABLE_ADMIN_RESET=true` e defina `ADMIN_RESET_TOKEN`.
+   2. Chame `POST /api/admin/reset-users` com o header `X-Admin-Reset`.
+   3. Registre o novo usuário admin via frontend (`/register`).
+   4. Desabilite `ENABLE_ADMIN_RESET` em produção após a inicialização.
+
+Observação: após a inicialização, remova/desabilite o reset para evitar uso indevido.

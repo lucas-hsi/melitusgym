@@ -209,17 +209,4 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     """Retorna o usuário atual (simplificado para modelo único)"""
     return current_user
 
-# Função para verificar se já existe um usuário registrado
-def check_existing_user(session: Session) -> bool:
-    """Verifica se já existe um usuário no sistema"""
-    statement = select(User)
-    existing_user = session.exec(statement).first()
-    return existing_user is not None
-
-def prevent_multiple_registrations(session: Session) -> None:
-    """Bloqueia múltiplos registros se já existir um usuário"""
-    if check_existing_user(session):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Sistema configurado para usuário único. Use o login para acessar sua conta existente."
-        )
+# Modo multiusuário: funções de single-user removidas

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from datetime import datetime
-from app.api.routes import health, auth, clinical, alarms, notifications, nutrition, nutrition_v2
+from app.api.routes import health, auth, clinical, alarms, notifications, nutrition, nutrition_v2, admin
 from app.services.database import create_db_and_tables
 from app.services.fcm_service import start_alarm_scheduler
 import os
@@ -129,6 +129,7 @@ app.include_router(alarms.router, prefix="/api", tags=["alarms"])
 app.include_router(notifications.router, prefix="/api", tags=["notifications"])
 app.include_router(nutrition.router, prefix="/api", tags=["nutrition"])
 app.include_router(nutrition_v2.router, prefix="/api", tags=["nutrition_v2"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"]) 
 
 # Rota raiz
 @app.get("/")

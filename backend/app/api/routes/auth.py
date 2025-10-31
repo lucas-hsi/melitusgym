@@ -15,49 +15,48 @@ security = HTTPBearer()
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, session: Session = Depends(get_session)):
-    """Registra um novo usuário"""
+    """Registra um novo usuário (multiusuário)"""
     try:
         logger.info(f"Registration attempt for email: {user_data.email}")
-        
-        # Restringir a registro único: se já existe usuário, bloquear
-        if AuthService.check_existing_user(session):
-            logger.warning("Registration blocked: single-user mode active")
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Registro desabilitado: modo usuário único. Faça login com o usuário já cadastrado."
-            )
 
         # Validações básicas
         if not user_data.email or not user_data.password or not user_data.nome:
-            raise ValidationError("All fields are required")
-        
+            raise ValidationError("Todos os campos são obrigatórios")
+
         if len(user_data.password) < 6:
-            raise ValidationError("Password must be at least 6 characters")
-        
-        # Verificar se já existe usuário com este nome
-        existing_name = session.exec(select(User).where(User.nome == user_data.nome)).first()
-        if existing_name:
-            logger.warning(f"Registration attempt with existing name: {user_data.nome}")
-            raise ValidationError("Nome já está em uso")
-        
-        # Criar usuário usando o serviço otimizado
+            raise ValidationError("A senha deve ter pelo menos 6 caracteres")
+
+        # Criar usuário usando o serviço
         new_user = AuthService.create_user(
             session=session,
             nome=user_data.nome,
             email=user_data.email,
             password=user_data.password
         )
-        
+
         logger.info(f"User registered successfully: {new_user.email}")
-        
+
         return UserResponse(
             id=new_user.id,
             nome=new_user.nome,
             email=new_user.email,
             created_at=new_user.created_at
         )
-        
-    except (ValidationError, AuthenticationError) as e:
+
+    except AuthenticationError as e:
+        # Email já existente deve retornar 409
+        message = str(e)
+        logger.warning(f"Registration authentication error: {message}")
+        if "already exists" in message.lower():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email já cadastrado"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message
+        )
+    except ValidationError as e:
         logger.warning(f"Registration validation error: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -67,13 +66,13 @@ async def register(user_data: UserCreate, session: Session = Depends(get_session
         logger.error(f"Database error during registration: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error occurred"
+            detail="Erro de banco de dados"
         )
     except Exception as e:
         logger.error(f"Unexpected error during registration: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail="Erro interno do servidor"
         )
 
 @router.post("/login", response_model=Token)

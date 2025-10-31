@@ -59,17 +59,13 @@ export default function RegisterPage() {
       }, 2000)
     } catch (err: any) {
       console.error('Erro no registro:', err)
-      if (err.response?.data?.detail) {
-        // Garantir que o erro seja sempre uma string
+      // Tratar conflitos de email explicitamente
+      if (err.response?.status === 409) {
+        setError('Email já cadastrado. Use outro endereço ou faça login.')
+      } else if (err.response?.data?.detail) {
         const errorDetail = err.response.data.detail
         if (typeof errorDetail === 'string') {
           setError(errorDetail)
-          // Se for erro de sistema single-user, redirecionar para login após 3 segundos
-          if (errorDetail.includes('usuário único')) {
-            setTimeout(() => {
-              router.push('/login')
-            }, 3000)
-          }
         } else if (Array.isArray(errorDetail)) {
           setError(errorDetail.map(e => e.msg || e).join(', '))
         } else {
