@@ -1,43 +1,68 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+from datetime import datetime
 from app.api.routes import health, auth, clinical, alarms, notifications, nutrition, nutrition_v2
 from app.services.database import create_db_and_tables
 from app.services.fcm_service import start_alarm_scheduler
 import os
 import asyncio
-import logging
 from dotenv import load_dotenv
 
 # Carregar variáveis de ambiente
 load_dotenv()
 
-# Configurar logging para produção
-logging.basicConfig(
-    level=logging.INFO if os.getenv("ENVIRONMENT") == "production" else logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+# Importar sistema de logging e exceções
+from app.core.logging_config import setup_logging, get_logger
+from app.core.exceptions import setup_exception_handlers
+
+# Importar middlewares customizados
+from app.core.middleware import (
+    PerformanceMiddleware,
+    SecurityMiddleware,
+    RateLimitMiddleware,
+    get_performance_metrics,
+    clear_performance_metrics
 )
-logger = logging.getLogger(__name__)
+
+# Configurar logging
+setup_logging()
+logger = get_logger("main")
 
 # Criar instância do FastAPI
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("🚀 Iniciando aplicação Melitus Gym...")
+    
+    # Criar tabelas do banco de dados
+    try:
+        create_db_and_tables()
+        logger.info("✅ Banco de dados inicializado com sucesso")
+    except Exception as e:
+        logger.error(f"❌ Erro ao inicializar banco de dados: {e}")
+        raise
+    
+    # Iniciar scheduler de alarmes FCM
+    try:
+        from app.services.fcm_scheduler import start_fcm_alarm_scheduler
+        await start_fcm_alarm_scheduler()
+        logger.info("✅ FCM Alarm Scheduler iniciado com sucesso")
+    except Exception as e:
+        logger.error(f"❌ Erro ao iniciar FCM Alarm Scheduler: {e}")
+        # Não falhar a aplicação se o scheduler não iniciar
+    
+    yield
+    
+    # Shutdown
+    logger.info("🛑 Encerrando aplicação Melitus Gym...")
+
 app = FastAPI(
     title="Melitus Gym API",
-    description="""API completa para controle de diabetes, hipertensão e performance física.
-    
-    ## Funcionalidades
-    
-    * **Autenticação**: Sistema de login JWT para usuário único
-    * **Registros Clínicos**: Controle de glicemia, pressão arterial e insulina
-    * **Estatísticas**: Análise de tendências e métricas de saúde
-    * **Filtros Avançados**: Busca por período, tipo de medição e paginação
-    
-    ## Endpoints Principais
-    
-    * `/api/auth/*` - Autenticação e gerenciamento de usuário
-    * `/api/clinical/*` - Registros e consultas clínicas
-    * `/api/health/*` - Verificação de saúde da API
-    """,
+    description="API para controle de diabetes, hipertensão e fitness",
     version="1.0.0",
+    lifespan=lifespan,
     docs_url="/docs" if os.getenv("ENVIRONMENT") != "production" else None,
     redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None,
     contact={
@@ -49,12 +74,19 @@ app = FastAPI(
     },
 )
 
+# Configurar handlers de exceção
+setup_exception_handlers(app)
+
 """
 Configuração de CORS
-- Lê origens permitidas da variável de ambiente `ALLOWED_ORIGINS` (separadas por vírgula)
+- Lê origens permitidas das variáveis de ambiente `ALLOWED_ORIGINS` ou `CORS_ORIGINS` (separadas por vírgula)
 - Mantém fallback seguro para ambiente local
 """
-cors_origins_env = os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000")
+cors_origins_env = (
+    os.getenv("ALLOWED_ORIGINS")
+    or os.getenv("CORS_ORIGINS")
+    or "http://127.0.0.1:3000,http://localhost:3000"
+)
 allow_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
 
 logger.info(f"CORS configurado para: {allow_origins}")
@@ -73,24 +105,21 @@ app.add_middleware(
     ],
 )
 
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Iniciando aplicação MelitusGym...")
-    try:
-        create_db_and_tables()
-        logger.info("Banco de dados inicializado com sucesso")
-        
-        # Iniciar agendador de alarmes FCM em background
-        asyncio.create_task(start_alarm_scheduler())
-        logger.info("Agendador de alarmes iniciado")
-        
-    except Exception as e:
-        logger.error(f"Erro durante inicialização: {e}")
-        raise
+# Adicionar middlewares customizados (ordem importa!)
+# 1. Security headers (primeiro)
+app.add_middleware(SecurityMiddleware)
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("Encerrando aplicação MelitusGym...")
+# 2. Rate limiting (antes de performance para evitar overhead)
+if os.getenv("ENVIRONMENT") == "production":
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=120)
+else:
+    # Mais permissivo em desenvolvimento
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=300)
+
+# 3. Performance monitoring (último para capturar tudo)
+app.add_middleware(PerformanceMiddleware, slow_request_threshold=2.0)
+
+
 
 # Incluir rotas
 app.include_router(health.router, prefix="/api", tags=["health"])
@@ -137,6 +166,35 @@ async def health_check():
                 "error": str(e)
             }
         )
+
+# Endpoint para métricas de performance (apenas em desenvolvimento)
+@app.get("/metrics")
+async def get_metrics():
+    if os.getenv("ENVIRONMENT") == "production":
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    try:
+        metrics = get_performance_metrics()
+        return JSONResponse(content={
+            "performance_metrics": metrics,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Erro ao obter métricas: {e}")
+        raise HTTPException(status_code=500, detail="Error retrieving metrics")
+
+# Endpoint para limpar métricas (apenas em desenvolvimento)
+@app.delete("/metrics")
+async def clear_metrics():
+    if os.getenv("ENVIRONMENT") == "production":
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    try:
+        clear_performance_metrics()
+        return JSONResponse(content={"message": "Metrics cleared successfully"})
+    except Exception as e:
+        logger.error(f"Erro ao limpar métricas: {e}")
+        raise HTTPException(status_code=500, detail="Error clearing metrics")
 
 if __name__ == "__main__":
     import uvicorn
