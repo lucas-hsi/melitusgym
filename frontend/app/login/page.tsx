@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import axios from 'axios'
 
 interface LoginForm {
-  username: string
+  email: string
   password: string
 }
 
@@ -25,7 +25,7 @@ interface LoginResponse {
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginForm>({
-    username: '',
+    email: '',
     password: ''
   })
   const [loading, setLoading] = useState(false)
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
     try {
       // Usar o método login do AuthContext
-      const success = await login(formData.username, formData.password)
+      const success = await login(formData.email, formData.password)
       
       if (!success) {
         setError('Email ou senha incorretos')
@@ -98,17 +98,17 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-[#1C1C1C] mb-2">
-              Email ou Usuário
+            <label htmlFor="email" className="block text-sm font-medium text-[#1C1C1C] mb-2">
+              Email
             </label>
             <input
-              id="username"
-              name="username"
-              type="text"
+              id="email"
+              name="email"
+              type="email"
               required
               className="w-full px-4 py-3 rounded-xl border border-white/30 bg-white/20 backdrop-blur-sm text-[#1C1C1C] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#BFFF00] focus:border-transparent"
-              placeholder="seu@email.com ou usuário"
-              value={formData.username}
+              placeholder="seu@email.com"
+              value={formData.email}
               onChange={handleInputChange}
             />
           </div>

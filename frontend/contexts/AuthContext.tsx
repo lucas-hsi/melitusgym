@@ -15,7 +15,7 @@ interface User {
 interface AuthContextType {
   user: User | null
   token: string | null
-  login: (username: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   isLoading: boolean
   isAuthenticated: boolean
@@ -118,18 +118,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkStoredAuth()
   }, []) // ✅ Array vazio - executa apenas uma vez
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true)
       
-      // Criar FormData para OAuth2PasswordRequestForm
-      const formData = new FormData()
-      formData.append('username', username)
-      formData.append('password', password)
+      const payload = {
+        email,
+        password
+      }
       
-      const response = await axios.post('/auth/login', formData, {
+      const response = await axios.post('/auth/login', payload, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/json'
         }
       })
       
