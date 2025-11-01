@@ -30,9 +30,8 @@ pydantic-settings==2.1.0
 tenacity==8.2.3
 psutil==5.9.6
 
-# Firebase Cloud Messaging dependencies (older versions)
-aiohttp==3.9.1
-google-auth==2.26.2
+# Removed Firebase Cloud Messaging dependencies
+# (aiohttp, google-auth) — Firebase/FCM support deprecated
 requests==2.31.0
 
 # ETL for nutrition (Excel/PDF ingestion)

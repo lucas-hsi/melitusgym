@@ -3,9 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from datetime import datetime
-from app.api.routes import health, auth, clinical, alarms, notifications, nutrition, nutrition_v2, admin, meal_logs
+from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, admin, meal_logs
 from app.services.database import create_db_and_tables
-from app.services.fcm_service import start_alarm_scheduler
 import os
 import asyncio
 from dotenv import load_dotenv
@@ -45,14 +44,8 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Erro ao inicializar banco de dados: {e}")
         raise
     
-    # Iniciar scheduler de alarmes FCM
-    try:
-        from app.services.fcm_scheduler import start_fcm_alarm_scheduler
-        await start_fcm_alarm_scheduler()
-        logger.info("✅ FCM Alarm Scheduler iniciado com sucesso")
-    except Exception as e:
-        logger.error(f"❌ Erro ao iniciar FCM Alarm Scheduler: {e}")
-        # Não falhar a aplicação se o scheduler não iniciar
+    # Scheduler de FCM desativado (Firebase removido)
+    # Mantido vazio para evitar efeitos colaterais no startup
     
     yield
     
@@ -130,7 +123,6 @@ app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(clinical.router, prefix="/api", tags=["clinical"])
 app.include_router(alarms.router, prefix="/api", tags=["alarms"])
-app.include_router(notifications.router, prefix="/api", tags=["notifications"])
 app.include_router(nutrition.router, prefix="/api", tags=["nutrition"])
 app.include_router(nutrition_v2.router, prefix="/api", tags=["nutrition_v2"])
 app.include_router(meal_logs.router, prefix="/api", tags=["meal_logs"])

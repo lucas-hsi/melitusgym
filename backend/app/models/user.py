@@ -5,8 +5,6 @@ from pydantic import BaseModel, EmailStr
 
 if TYPE_CHECKING:
     from .alarm import Alarm
-    from .notification_token import NotificationToken
-    from .push_alarm import PushAlarm
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
@@ -19,8 +17,6 @@ class User(SQLModel, table=True):
     
     # Relacionamentos
     alarms: List["Alarm"] = Relationship(back_populates="user")
-    notification_tokens: List["NotificationToken"] = Relationship(back_populates="user")
-    push_alarms: List["PushAlarm"] = Relationship(back_populates="user")
 
 class UserCreate(SQLModel):
     nome: str

@@ -24,7 +24,6 @@
     "class-variance-authority": "0.7.0",
     "clsx": "2.0.0",
     "date-fns": "2.30.0",
-    "firebase": "^12.3.0",
     "framer-motion": "^12.23.22",
     "idb": "^8.0.3",
     "lucide-react": "0.294.0",
