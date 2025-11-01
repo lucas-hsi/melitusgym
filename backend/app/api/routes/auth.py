@@ -7,6 +7,8 @@ from app.services.auth import AuthService, get_current_user
 from app.core.exceptions import AuthenticationError, DatabaseError, ValidationError
 from app.core.logging_config import get_logger
 from datetime import timedelta
+from sqlmodel import text
+import os
 
 logger = get_logger("api.auth")
 
@@ -88,33 +90,20 @@ async def login(
         if not user_credentials.email or not user_credentials.password:
             raise ValidationError("Email and password are required")
         
-        # Verificar se existe pelo menos um usuário no sistema
-        user_count = session.exec(select(User)).first()
+        # Autenticar usuário existente
+        user = AuthService.authenticate_user(
+            session, 
+            user_credentials.email, 
+            user_credentials.password
+        )
         
-        if not user_count:
-            # Se não há usuários, criar o primeiro usuário automaticamente
-            logger.info("No users found, creating first user")
-            user = AuthService.create_user(
-                session=session,
-                nome="Admin",
-                email=user_credentials.email,
-                password=user_credentials.password
+        if not user:
+            logger.warning(f"Authentication failed for email: {user_credentials.email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
             )
-        else:
-            # Autenticar usuário existente
-            user = AuthService.authenticate_user(
-                session, 
-                user_credentials.email, 
-                user_credentials.password
-            )
-            
-            if not user:
-                logger.warning(f"Authentication failed for email: {user_credentials.email}")
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Incorrect email or password",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
         
         # Criar token de acesso
         access_token_expires = timedelta(minutes=30)
@@ -217,3 +206,64 @@ async def verify_token(current_user: User = Depends(get_current_user)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token verification failed"
         )
+
+@router.get("/diagnostics")
+async def auth_diagnostics(session: Session = Depends(get_session)):
+    """Diagnóstico de autenticação e tabela de usuários.
+    Retorna contagem de usuários e verificação de constraints (único e índice em email).
+    """
+    try:
+        # Contagem de usuários
+        total_users = session.exec(text("SELECT COUNT(*) FROM users")).first() or 0
+
+        db_url = os.getenv("DATABASE_URL", "")
+        is_postgres = "postgres" in db_url or os.getenv("USE_SQLITE", "true").lower() == "false"
+
+        constraints = {
+            "email_unique": "unknown",
+            "email_index": "unknown"
+        }
+
+        if is_postgres:
+            # Verificar unique constraint em Postgres
+            unique_exists = session.exec(text(
+                """
+                SELECT COUNT(*) FROM pg_constraint c
+                JOIN pg_class t ON c.conrelid = t.oid
+                WHERE t.relname = 'users' AND c.conname LIKE '%email%'
+                  AND c.contype = 'u'
+                """
+            )).first()
+            constraints["email_unique"] = bool(unique_exists and unique_exists > 0)
+
+            # Verificar índice em Postgres
+            index_exists = session.exec(text(
+                """
+                SELECT COUNT(*) FROM pg_indexes
+                WHERE tablename = 'users' AND indexname LIKE '%email%'
+                """
+            )).first()
+            constraints["email_index"] = bool(index_exists and index_exists > 0)
+        else:
+            # Verificar em SQLite: listar índices e constraints
+            try:
+                idx_rows = session.exec(text("PRAGMA index_list('users')")).all()
+                constraints["email_index"] = any('email' in (row[1] or '').lower() for row in idx_rows)
+            except Exception:
+                constraints["email_index"] = False
+
+            # Unique é implícito na criação; em SQLite podemos verificar esquema
+            try:
+                table_sql = session.exec(text("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'")) .first()
+                constraints["email_unique"] = ('UNIQUE' in (table_sql or '').upper())
+            except Exception:
+                constraints["email_unique"] = False
+
+        return {
+            "users_count": total_users,
+            "constraints": constraints,
+            "database": "postgresql" if is_postgres else "sqlite",
+        }
+    except Exception as e:
+        logger.error(f"Auth diagnostics error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to run auth diagnostics")

@@ -13,8 +13,12 @@ def get_database_url() -> str:
     
     # Para desenvolvimento local, usar SQLite
     # Para produção/Railway, usar PostgreSQL
+    # Modo de testes força banco em memória
+    if os.getenv("TESTING", "false").lower() == "true":
+        return "sqlite:///:memory:"
     if os.getenv("USE_SQLITE", "true").lower() == "true":
-        return "sqlite:///./healthtrack.db"
+        # Permitir sobrescrever arquivo sqlite via DATABASE_URL se fornecido
+        return os.getenv("DATABASE_URL", "sqlite:///./healthtrack.db")
     else:
         # Usar DATABASE_URL do Railway ou fallback para configuração manual
         database_url = os.getenv("DATABASE_URL")
