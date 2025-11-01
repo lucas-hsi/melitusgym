@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 // Criar instância do axios com configuração personalizada
 const axiosInstance = axios.create({
@@ -10,9 +10,13 @@ const axiosInstance = axios.create({
 });
 
 // Configuração global do axios
-const setupAxiosInterceptors = () => {
+export const setupAxiosInterceptors = (
+  instance: AxiosInstance = axiosInstance,
+  options?: { redirectOn401?: boolean }
+) => {
+  const redirectOn401 = options?.redirectOn401 ?? true;
   // Interceptor para adicionar token automaticamente
-  axiosInstance.interceptors.request.use(
+  instance.interceptors.request.use(
     (config) => {
       // Evitar acesso ao localStorage durante SSR
       if (typeof window !== 'undefined') {
@@ -29,7 +33,7 @@ const setupAxiosInterceptors = () => {
   );
 
   // Interceptor para tratar erros de autenticação
-  axiosInstance.interceptors.response.use(
+  instance.interceptors.response.use(
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
@@ -38,7 +42,7 @@ const setupAxiosInterceptors = () => {
         localStorage.removeItem('auth_user');
         
         // Redirecionar para login apenas se não estivermos já na página de login
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        if (redirectOn401 && typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }
       }
@@ -48,6 +52,6 @@ const setupAxiosInterceptors = () => {
 };
 
 // Inicializar interceptors
-setupAxiosInterceptors();
+setupAxiosInterceptors(axiosInstance, { redirectOn401: true });
 
 export default axiosInstance;

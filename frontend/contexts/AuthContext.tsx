@@ -2,8 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import axios from 'axios'
-import setupAxiosInterceptors from '../lib/axios-config'
+import axiosInstance, { setupAxiosInterceptors } from '../lib/axios-config'
 
 interface User {
   id: number
@@ -50,7 +49,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Configurar interceptors do Axios
   useEffect(() => {
-    setupAxiosInterceptors()
+    setupAxiosInterceptors(axiosInstance, { redirectOn401: true })
   }, [])
 
   // Verificar se há sessão persistida no localStorage - executa apenas uma vez
@@ -74,7 +73,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             
             if (sessionAge <= maxSessionAge) {
               // Verificar se o token ainda é válido
-              const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-token`, {
+              const response = await axiosInstance.get(`/auth/verify-token`, {
                 headers: {
                   'Authorization': `Bearer ${storedToken}`
                 }
@@ -127,7 +126,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         password
       }
       
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, payload, {
+      const response = await axiosInstance.post(`/auth/login`, payload, {
         headers: {
           'Content-Type': 'application/json'
         }
