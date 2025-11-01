@@ -3,6 +3,7 @@ Configurações centralizadas do MelitusGym Backend
 """
 
 import os
+import json
 from typing import List, Optional
 from functools import lru_cache
 
@@ -77,8 +78,25 @@ class Settings(BaseSettings):
     
     @validator("cors_origins", pre=True)
     def parse_cors_origins(cls, v):
+        """Aceita formatos:
+        - String separada por vírgulas: "http://127.0.0.1:3000,http://localhost:3000"
+        - Lista JSON em string: "[\"http://127.0.0.1:3000\",\"http://localhost:3000\"]"
+        """
+        if not v:
+            return v
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
+            s = v.strip()
+            # Tentar parse como JSON array
+            if s.startswith("["):
+                try:
+                    arr = json.loads(s)
+                    if isinstance(arr, list):
+                        return [str(origin).strip() for origin in arr]
+                except Exception:
+                    # Fallback para split por vírgulas
+                    pass
+            # Fallback: split por vírgulas
+            return [origin.strip() for origin in s.split(",") if origin.strip()]
         return v
     
     @property

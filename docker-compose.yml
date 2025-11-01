@@ -30,6 +30,7 @@ services:
       - DATABASE_URL=postgresql://healthtrack_user:healthtrack_pass@db:5432/healthtrack
       - USE_SQLITE=false
       - JWT_SECRET_KEY=melitus-gym-super-secret-key-2024-production
+      - ALLOWED_ORIGINS=http://127.0.0.1:3000,http://localhost:3000
       - CORS_ORIGINS=["http://127.0.0.1:3000","http://localhost:3000"]
       - ENVIRONMENT=production
       - CRYPTOGRAPHY_DONT_BUILD_RUST=1

@@ -11,20 +11,33 @@ def test_clinical_logs_endpoint():
     # 1. Fazer login para obter token válido
     print("\n1. Fazendo login...")
     login_data = {
-        "username": "admin@melitusgym.com",  # OAuth2 usa 'username' não 'email'
+        "email": "admin@melitusgym.com",
         "password": "123456"
     }
     
     try:
-        # Usar form data, não JSON
-        login_response = requests.post(f"{base_url}/api/auth/login", data=login_data)
-        login_response.raise_for_status()
-        
+        # Usar JSON conforme implementação atual
+        login_response = requests.post(f"{base_url}/api/auth/login", json=login_data)
+        if login_response.status_code != 200:
+            print(f"❌ Login falhou ({login_response.status_code}), tentando registrar...")
+            register_payload = {
+                "nome": "Admin",
+                "email": login_data["email"],
+                "password": login_data["password"]
+            }
+            r2 = requests.post(f"{base_url}/api/auth/register", json=register_payload)
+            print(f"Register status {r2.status_code}")
+            # tentar login novamente
+            login_response = requests.post(f"{base_url}/api/auth/login", json=login_data)
+            login_response.raise_for_status()
+        else:
+            login_response.raise_for_status()
+
         login_result = login_response.json()
         token = login_result["access_token"]
         print(f"✅ Login realizado com sucesso!")
         print(f"Token: {token[:50]}...")
-        
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Erro no login: {e}")
         return

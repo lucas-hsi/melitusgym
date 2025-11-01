@@ -32,6 +32,7 @@ from .push_alarm import (
     PushAlarmResponse,
     AlarmType
 )
+from .taco_food import TACOFood
 
 
 __all__ = [
@@ -66,5 +67,6 @@ __all__ = [
     "PushAlarmCreate",
     "PushAlarmUpdate",
     "PushAlarmResponse",
-    "AlarmType"
+    "AlarmType",
+    "TACOFood"
 ]
