@@ -244,8 +244,14 @@ export const apiService = {
 
   // Nutrition endpoints
   getNutritionData: () => api.get('/nutrition/foods'),
-  
+
   analyzeFood: (imageData: FormData) => api.post('/nutrition/analyze', imageData),
+
+  // Unified nutrition search (Nutrition V2)
+  searchNutritionUnified: (term: string, pageSize: number = 20) => {
+    const params = new URLSearchParams({ term, page_size: pageSize.toString() });
+    return api.get(`/nutrition/v2/search?${params.toString()}`);
+  },
   
   // Workout endpoints
   getWorkouts: () => api.get('/workouts'),

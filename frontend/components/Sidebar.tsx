@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 
@@ -52,6 +53,8 @@ export default function Sidebar({ isOpen, onToggle, user }: SidebarProps) {
 
   return (
     <>
+      {/* Botão flutuante quando colapsado removido conforme solicitação: menu inferior será responsável pelo expandir/recolher */}
+
       {/* Overlay */}
       {isOpen && (
         <div 

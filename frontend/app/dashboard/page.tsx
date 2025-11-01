@@ -120,7 +120,7 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <LayoutBase title="Dashboard">
+<LayoutBase title="Dashboard">
         {/* Container Principal */}
         <motion.div
           initial={{ opacity: 0 }}
