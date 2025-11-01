@@ -51,7 +51,7 @@ services:
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: "https://melitusgym-backend.onrender.com/api"
+        value: "https://melitusgym-production.up.railway.app/api"
       - key: NODE_ENV
         value: production
     
