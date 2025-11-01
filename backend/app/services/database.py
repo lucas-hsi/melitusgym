@@ -1,7 +1,6 @@
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import QueuePool
 from sqlalchemy import event
-from app.core.config import settings
 from app.core.logging_config import get_logger
 from typing import Generator
 import time

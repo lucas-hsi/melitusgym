@@ -8,10 +8,12 @@ from typing import List, Optional
 from functools import lru_cache
 
 try:
-    from pydantic_settings import BaseSettings
-    from pydantic import validator
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+    from pydantic import field_validator
 except ImportError:
-    from pydantic import BaseSettings, validator
+    # Compatibilidade com Pydantic v1
+    from pydantic import BaseSettings, validator as field_validator
+    SettingsConfigDict = None
 
 
 class Settings(BaseSettings):
@@ -43,7 +45,8 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     
     # CORS
-    cors_origins: List[str] = [
+    # Aceita str (CSV/JSON) ou List[str] para compatibilidade com EnvSettingsSource
+    cors_origins: List[str] | str = [
         "http://127.0.0.1:3000",
         "http://localhost:3000",
         "https://tranquil-vitality-production-15a2.up.railway.app"
@@ -70,34 +73,64 @@ class Settings(BaseSettings):
     rate_limit_requests: int = 100
     rate_limit_window: int = 60  # 1 minuto
     
-    @validator("environment")
+    # Validador de ambiente (executa após parsing)
+    @field_validator("environment")
     def validate_environment(cls, v):
         if v not in ["development", "production", "testing"]:
             raise ValueError("Environment must be development, production, or testing")
         return v
     
-    @validator("cors_origins", pre=True)
+    # Validador de CORS (executa antes para aceitar CSV/JSON/lista)
+    @field_validator("cors_origins", mode="before")
     def parse_cors_origins(cls, v):
         """Aceita formatos:
         - String separada por vírgulas: "http://127.0.0.1:3000,http://localhost:3000"
         - Lista JSON em string: "[\"http://127.0.0.1:3000\",\"http://localhost:3000\"]"
+        - Lista Python: ["http://127.0.0.1:3000", "http://localhost:3000"]
         """
-        if not v:
-            return v
-        if isinstance(v, str):
-            s = v.strip()
-            # Tentar parse como JSON array
-            if s.startswith("["):
-                try:
-                    arr = json.loads(s)
-                    if isinstance(arr, list):
-                        return [str(origin).strip() for origin in arr]
-                except Exception:
-                    # Fallback para split por vírgulas
-                    pass
-            # Fallback: split por vírgulas
-            return [origin.strip() for origin in s.split(",") if origin.strip()]
-        return v
+        default_origins = [
+            "http://127.0.0.1:3000",
+            "http://localhost:3000",
+            "https://tranquil-vitality-production-15a2.up.railway.app"
+        ]
+        
+        try:
+            # Se já é uma lista, retorna como está
+            if isinstance(v, list):
+                return [str(origin).strip() for origin in v if origin]
+            
+            # Se é None ou string vazia, retorna lista padrão
+            if not v or (isinstance(v, str) and not v.strip()):
+                return default_origins
+            
+            if isinstance(v, str):
+                s = v.strip()
+                
+                # Se string vazia após strip, retorna padrão
+                if not s:
+                    return default_origins
+                
+                # Tentar parse como JSON array apenas se parece com JSON válido
+                if s.startswith("[") and s.endswith("]") and len(s) > 2:
+                    try:
+                        arr = json.loads(s)
+                        if isinstance(arr, list):
+                            origins = [str(origin).strip() for origin in arr if origin]
+                            return origins if origins else default_origins
+                    except (json.JSONDecodeError, ValueError, TypeError):
+                        # Se falhar o JSON parse, tenta como CSV removendo colchetes
+                        s = s.strip("[]").replace('"', '').replace("'", "")
+                
+                # Parse como CSV (formato recomendado para Railway)
+                origins = [origin.strip() for origin in s.split(",") if origin.strip()]
+                return origins if origins else default_origins
+            
+            # Fallback para qualquer outro tipo
+            return default_origins
+            
+        except Exception:
+            # Em caso de qualquer erro, retorna configuração padrão
+            return default_origins
     
     @property
     def is_development(self) -> bool:
@@ -125,11 +158,21 @@ class Settings(BaseSettings):
         # Construir URL PostgreSQL
         return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-        extra = "allow"  # Permitir campos extras
+    # Configuração de Settings
+    if SettingsConfigDict:
+        # Pydantic v2
+        model_config = SettingsConfigDict(
+            env_file=".env",
+            env_file_encoding="utf-8",
+            extra="allow",
+        )
+    else:
+        # Pydantic v1
+        class Config:
+            env_file = ".env"
+            env_file_encoding = "utf-8"
+            case_sensitive = False
+            extra = "allow"  # Permitir campos extras
 
 
 @lru_cache()
@@ -138,5 +181,18 @@ def get_settings() -> Settings:
     return Settings()
 
 
-# Instância global das configurações
-settings = get_settings()
+# Função para obter configurações sem cache (para testes)
+def get_settings_no_cache() -> Settings:
+    """Obtém as configurações da aplicação sem cache"""
+    return Settings()
+
+
+# Instância global das configurações (lazy loading)
+_settings = None
+
+def settings() -> Settings:
+    """Obtém a instância global das configurações"""
+    global _settings
+    if _settings is None:
+        _settings = get_settings()
+    return _settings

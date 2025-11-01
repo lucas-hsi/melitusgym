@@ -27,7 +27,10 @@ JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # CORS - IMPORTANTE para integração com frontend
-ALLOWED_ORIGINS=https://melitus-gym-frontend.onrender.com,http://localhost:3000
+# Preferir CORS_ORIGINS em formato CSV (compatível com Railway/Render)
+CORS_ORIGINS=https://tranquil-vitality-production-15a2.up.railway.app,http://127.0.0.1:3000
+# ALLOWED_ORIGINS permanece compatível e é usado por um fallback no main.py
+ALLOWED_ORIGINS=https://tranquil-vitality-production-15a2.up.railway.app,http://127.0.0.1:3000
 
 # Environment
 ENVIRONMENT=production
@@ -76,7 +79,11 @@ O backend está configurado para aceitar requisições dos seguintes domínios:
 - `https://tranquil-vitality-production-15a2.up.railway.app` (produção)
 - `http://localhost:3000` (desenvolvimento local)
 
-Para adicionar novos domínios, atualize a variável `ALLOWED_ORIGINS` no provedor (Railway/Render).
+Aceita dois formatos de configuração:
+- `CORS_ORIGINS` em formato CSV (recomendado): `https://seu-app.railway.app,http://127.0.0.1:3000`
+- `ALLOWED_ORIGINS` (compatibilidade): também em CSV
+
+Em produção (Railway/Render), prefira sempre `CORS_ORIGINS` em CSV para evitar erros de parsing.
 
 ### URLs de API
 
