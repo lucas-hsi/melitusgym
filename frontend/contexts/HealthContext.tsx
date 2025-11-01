@@ -12,6 +12,7 @@ interface HealthProfile {
   historico: string[];
   objetivos: string[];
   nivelAtividade: 'sedentario' | 'leve' | 'moderado' | 'intenso';
+  insulinSensitivity?: number; // Sensibilidade à insulina (g de carboidratos por 1U)
 }
 
 interface HealthMetrics {

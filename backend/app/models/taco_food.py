@@ -6,7 +6,7 @@ class TACOFood(SQLModel, table=True):
     __tablename__ = "taco_foods"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    name_pt: str = Field(index=True, description="Nome do alimento em PT-BR")
+    name_pt: str = Field(index=True, description="Nome do alimento em PT-BR", sa_column_kwargs={"unique": True})
     category_pt: Optional[str] = Field(default=None, description="Categoria alimentar PT-BR")
 
     # Nutrientes por 100g

@@ -1,12 +1,18 @@
 import axios from 'axios';
 
+// Criar instância do axios com configuração personalizada
+const axiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 15000, // 15 segundos
+});
+
 // Configuração global do axios
 const setupAxiosInterceptors = () => {
-  // Configurar baseURL padrão
-  axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
-  
   // Interceptor para adicionar token automaticamente
-  axios.interceptors.request.use(
+  axiosInstance.interceptors.request.use(
     (config) => {
       // Evitar acesso ao localStorage durante SSR
       if (typeof window !== 'undefined') {
@@ -23,7 +29,7 @@ const setupAxiosInterceptors = () => {
   );
 
   // Interceptor para tratar erros de autenticação
-  axios.interceptors.response.use(
+  axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
@@ -41,4 +47,7 @@ const setupAxiosInterceptors = () => {
   );
 };
 
-export default setupAxiosInterceptors;
+// Inicializar interceptors
+setupAxiosInterceptors();
+
+export default axiosInstance;
