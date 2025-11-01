@@ -104,7 +104,7 @@ jobs:
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       run: |
-        cd ../frontend
+        cd frontend
         echo "Starting Railway deploy (frontend)"
         railway up || echo "Using Railway repo auto-deploy if CLI not configured"
 
