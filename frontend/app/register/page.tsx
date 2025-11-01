@@ -51,7 +51,7 @@ export default function RegisterPage() {
       }
 
       await axios.post(
-        '/auth/register',
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
         registerData,
         {
           headers: {

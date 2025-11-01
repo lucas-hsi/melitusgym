@@ -74,7 +74,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             
             if (sessionAge <= maxSessionAge) {
               // Verificar se o token ainda é válido
-              const response = await axios.get('/auth/verify-token', {
+              const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-token`, {
                 headers: {
                   'Authorization': `Bearer ${storedToken}`
                 }
@@ -127,7 +127,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         password
       }
       
-      const response = await axios.post('/auth/login', payload, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, payload, {
         headers: {
           'Content-Type': 'application/json'
         }
