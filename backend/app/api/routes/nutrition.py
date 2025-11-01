@@ -7,8 +7,8 @@ import json
 import os
 from datetime import datetime
 from sqlmodel import Session, select
-from app.models import MealLog
-from app.schemas.meal_log import MealLogCreate, MealLogRead
+# from app.models import MealLog
+# from app.schemas.meal_log import MealLogCreate, MealLogRead
 from app.services.database import get_session
 from app.services.auth import get_current_user
 
@@ -330,28 +330,28 @@ async def get_product_by_barcode(barcode: str):
         raise HTTPException(status_code=500, detail=f"Error fetching product: {str(e)}")
 
 
-@router.post("/nutrition/meals", response_model=MealLogRead, status_code=201)
-async def create_meal_log(payload: MealLogCreate, db: Session = Depends(get_session), current_user=Depends(get_current_user)):
-    """Persistir MealLog no banco"""
-    meal_log = MealLog(
-        user_id=current_user.id,
-        items=[item.dict() for item in payload.items],
-        carbs_total=payload.carbs_total,
-        insulin_suggested=payload.insulin_suggested,
-        img_url=payload.img_url,
-    )
-    db.add(meal_log)
-    db.commit()
-    db.refresh(meal_log)
-    return meal_log
+# @router.post("/nutrition/meals", response_model=MealLogRead, status_code=201)
+# async def create_meal_log(payload: MealLogCreate, db: Session = Depends(get_session), current_user=Depends(get_current_user)):
+#     """Persistir MealLog no banco"""
+#     meal_log = MealLog(
+#         user_id=current_user.id,
+#         items=[item.dict() for item in payload.items],
+#         carbs_total=payload.carbs_total,
+#         insulin_suggested=payload.insulin_suggested,
+#         img_url=payload.img_url,
+#     )
+#     db.add(meal_log)
+#     db.commit()
+#     db.refresh(meal_log)
+#     return meal_log
 
 
-@router.get("/nutrition/meals", response_model=List[MealLogRead])
-async def list_meal_logs(skip: int = 0, limit: int = 20, db: Session = Depends(get_session), current_user=Depends(get_current_user)):
-    """Listar MealLogs do usuário"""
-    statement = select(MealLog).where(MealLog.user_id == current_user.id).order_by(MealLog.created_at.desc()).offset(skip).limit(limit)
-    results = db.exec(statement).all()
-    return results
+# @router.get("/nutrition/meals", response_model=List[MealLogRead])
+# async def list_meal_logs(skip: int = 0, limit: int = 20, db: Session = Depends(get_session), current_user=Depends(get_current_user)):
+#     """Listar MealLogs do usuário"""
+#     statement = select(MealLog).where(MealLog.user_id == current_user.id).order_by(MealLog.created_at.desc()).offset(skip).limit(limit)
+#     results = db.exec(statement).all()
+#     return results
 
 
 @router.get("/nutrition/portions/off/{barcode}")
