@@ -6,6 +6,7 @@ class NutritionSource(str, Enum):
     """Fontes de dados nutricionais"""
     OPENFOODFACTS = "openfoodfacts"
     USDA_FDC = "usda_fdc"
+    TACO_DB = "taco_db"
 
 class PortionUnit(str, Enum):
     """Unidades de porção suportadas"""
@@ -50,6 +51,8 @@ class NutritionItem(BaseModel):
     nutriscore: Optional[str] = Field(None, description="Nutri-Score (A-E)")
     ecoscore: Optional[str] = Field(None, description="Eco-Score (A-E)")
     data_type: Optional[str] = Field(None, description="Tipo de dados (USDA)")
+    glycemic_index: Optional[float] = Field(None, description="Índice glicêmico (TBCA)")
+    category: Optional[str] = Field(None, description="Categoria alimentar PT-BR")
 
 class SearchRequest(BaseModel):
     """Requisição de busca"""

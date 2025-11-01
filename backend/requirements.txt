@@ -28,11 +28,16 @@ pydantic-settings==2.1.0
 
 # Utilities with binary wheels
 tenacity==8.2.3
+psutil==5.9.6
 
 # Firebase Cloud Messaging dependencies (older versions)
 aiohttp==3.9.1
-google-auth==2.25.2
+google-auth==2.26.2
 requests==2.31.0
+
+# ETL for nutrition (Excel/PDF ingestion)
+openpyxl==3.1.2
+pdfplumber==0.10.3
 
 # Additional optimization flags
 # Install with: pip install --prefer-binary --no-cache-dir -r requirements.txt

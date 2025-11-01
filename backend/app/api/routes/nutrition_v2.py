@@ -11,6 +11,9 @@ from ...schemas.nutrition_schemas import (
 )
 from ...services.nutrition_connectors import NutritionConnectorService
 from ...services.nutrition_calculator import NutritionCalculatorService
+from ...services.etl_taco import ingest_taco_excel
+from ...services.auth import get_current_user
+from ...models.user import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/nutrition/v2", tags=["Nutrition V2"])
@@ -21,36 +24,60 @@ calculator_service = NutritionCalculatorService()
 
 @router.get("/health", response_model=HealthCheckResponse)
 async def health_check():
-    """Verifica status dos serviços de nutrição"""
-    
-    services_status = {
-        "openfoodfacts": "unknown",
-        "usda_fdc": "unknown"
-    }
-    
-    # Testa OpenFoodFacts
+    """Verifica status da base local TACO/TBCA."""
+    services_status = {"taco_db": "unknown"}
     try:
-        await connector_service.off_connector.search_foods("test", 1)
-        services_status["openfoodfacts"] = "healthy"
+        # Consulta mínima para validar acesso à base local
+        await connector_service.search_unified("arroz", 1)
+        services_status["taco_db"] = "healthy"
     except Exception as e:
-        services_status["openfoodfacts"] = f"error: {str(e)[:50]}"
-        logger.warning(f"OpenFoodFacts health check failed: {str(e)}")
-    
-    # Testa USDA FDC
-    try:
-        await connector_service.fdc_connector.search_foods("test", 1)
-        services_status["usda_fdc"] = "healthy"
-    except Exception as e:
-        services_status["usda_fdc"] = f"error: {str(e)[:50]}"
-        logger.warning(f"USDA FDC health check failed: {str(e)}")
-    
-    overall_status = "healthy" if any("healthy" in status for status in services_status.values()) else "degraded"
-    
+        services_status["taco_db"] = f"error: {str(e)[:50]}"
+        logger.warning(f"TACO DB health check failed: {str(e)}")
+
+    overall_status = "healthy" if services_status["taco_db"] == "healthy" else "degraded"
     return HealthCheckResponse(
         status=overall_status,
         services=services_status,
         timestamp=datetime.now().isoformat()
     )
+
+@router.post("/ingest/taco")
+async def ingest_taco(
+    path: str = Query(
+        default=r"c:\\Users\\lucas\\OneDrive\\Área de Trabalho\\Melitus Gym\\Taco-4a-Edicao.xlsx",
+        description="Caminho do arquivo Excel da TACO"
+    ),
+    current_user: User = Depends(get_current_user)
+):
+    """Importa dados TACO para o banco (PostgreSQL) com autenticação.
+
+    Retorna contagem de registros criados/atualizados.
+    """
+    try:
+        logger.info(f"Ingestão TACO iniciada por {current_user.email} - arquivo: {path}")
+        stats = ingest_taco_excel(path)
+        logger.info(f"Ingestão TACO concluída - created={stats.get('created')}, updated={stats.get('updated')}")
+        return {
+            "status": "ok",
+            "source": "TACO",
+            "path": path,
+            "created": stats.get("created", 0),
+            "updated": stats.get("updated", 0),
+            "timestamp": datetime.now().isoformat()
+        }
+    except FileNotFoundError as e:
+        logger.error(f"Arquivo TACO não encontrado: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Falha na ingestão TACO: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "taco_ingest_failed",
+                "message": f"Falha na ingestão TACO: {str(e)}",
+                "timestamp": datetime.now().isoformat()
+            }
+        )
 
 @router.get("/search", response_model=SearchResponse)
 async def search_foods(
@@ -58,7 +85,7 @@ async def search_foods(
     page_size: int = Query(20, ge=1, le=50, description="Número de resultados"),
     sources: Optional[List[NutritionSource]] = Query(None, description="Fontes específicas")
 ):
-    """Busca unificada de alimentos com fallback entre APIs"""
+    """Busca exclusiva na base TACO/TBCA local (PT-BR)."""
     
     start_time = datetime.now()
     
@@ -207,129 +234,4 @@ async def calculate_nutrition(request: CalculationRequest):
             }
         )
 
-# Endpoints de conveniência
-@router.get("/search/openfoodfacts")
-async def search_openfoodfacts_only(
-    term: str = Query(..., min_length=2, max_length=100),
-    page_size: int = Query(20, ge=1, le=50)
-):
-    """Busca apenas no OpenFoodFacts"""
-    
-    try:
-        result = await connector_service.off_connector.search_foods(term, page_size)
-        
-        if result.get("products"):
-            normalized = connector_service._normalize_off_products(result["products"])
-            return {
-                "source": "openfoodfacts",
-                "term": term,
-                "items": normalized,
-                "total_found": len(normalized)
-            }
-        
-        return {
-            "source": "openfoodfacts",
-            "term": term,
-            "items": [],
-            "total_found": 0
-        }
-        
-    except Exception as e:
-        logger.error(f"OpenFoodFacts search failed - term: {term}, error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Falha na busca OpenFoodFacts: {str(e)}"
-        )
-
-@router.get("/search/usda")
-async def search_usda_only(
-    term: str = Query(..., min_length=2, max_length=100),
-    page_size: int = Query(20, ge=1, le=50)
-):
-    """Busca apenas no USDA FDC"""
-    
-    try:
-        result = await connector_service.fdc_connector.search_foods(term, page_size)
-        
-        if result.get("foods"):
-            normalized = connector_service._normalize_fdc_foods(result["foods"])
-            return {
-                "source": "usda_fdc",
-                "term": term,
-                "items": normalized,
-                "total_found": len(normalized)
-            }
-        
-        return {
-            "source": "usda_fdc",
-            "term": term,
-            "items": [],
-            "total_found": 0
-        }
-        
-    except Exception as e:
-        logger.error(f"USDA FDC search failed - term: {term}, error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Falha na busca USDA: {str(e)}"
-        )
-
-@router.get("/product/{barcode}")
-async def get_openfoodfacts_product(barcode: str):
-    """Obtém produto específico do OpenFoodFacts por código de barras"""
-    
-    try:
-        result = await connector_service.off_connector.get_product(barcode)
-        
-        if result.get("status") == 1 and result.get("product"):
-            normalized = connector_service._normalize_off_products([result["product"]])
-            return {
-                "source": "openfoodfacts",
-                "barcode": barcode,
-                "product": normalized[0] if normalized else None,
-                "found": bool(normalized)
-            }
-        
-        return {
-            "source": "openfoodfacts",
-            "barcode": barcode,
-            "product": None,
-            "found": False
-        }
-        
-    except Exception as e:
-        logger.error(f"OpenFoodFacts product failed - barcode: {barcode}, error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Falha ao buscar produto: {str(e)}"
-        )
-
-@router.get("/food/{fdc_id}")
-async def get_usda_food(fdc_id: int):
-    """Obtém alimento específico do USDA FDC por ID"""
-    
-    try:
-        result = await connector_service.fdc_connector.get_food_details(fdc_id)
-        
-        if result:
-            normalized = connector_service._normalize_fdc_foods([result])
-            return {
-                "source": "usda_fdc",
-                "fdc_id": fdc_id,
-                "food": normalized[0] if normalized else None,
-                "found": bool(normalized)
-            }
-        
-        return {
-            "source": "usda_fdc",
-            "fdc_id": fdc_id,
-            "food": None,
-            "found": False
-        }
-        
-    except Exception as e:
-        logger.error(f"USDA FDC food failed - fdc_id: {fdc_id}, error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Falha ao buscar alimento: {str(e)}"
-        )
+# Endpoints externos removidos: fluxo agora é exclusivamente TACO/TBCA local

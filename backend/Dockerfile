@@ -14,6 +14,7 @@ ENV PYTHONUNBUFFERED=1
 # Instalar dependências do sistema mínimas
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements primeiro (para cache do Docker)

@@ -10,6 +10,7 @@ import os
 import asyncio
 from dotenv import load_dotenv
 
+
 # Carregar variáveis de ambiente
 load_dotenv()
 

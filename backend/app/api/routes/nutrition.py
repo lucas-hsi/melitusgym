@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Form, File, UploadFile
+from fastapi import APIRouter, HTTPException, Depends, Form, File, UploadFile
 from fastapi.responses import JSONResponse
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
@@ -6,6 +6,11 @@ import httpx
 import json
 import os
 from datetime import datetime
+from sqlmodel import Session, select
+from app.models import MealLog
+from app.schemas.meal_log import MealLogCreate, MealLogRead
+from app.services.database import get_session
+from app.services.auth import get_current_user
 
 router = APIRouter()
 
@@ -323,3 +328,84 @@ async def get_product_by_barcode(barcode: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching product: {str(e)}")
+
+
+@router.post("/nutrition/meals", response_model=MealLogRead, status_code=201)
+async def create_meal_log(payload: MealLogCreate, db: Session = Depends(get_session), current_user=Depends(get_current_user)):
+    """Persistir MealLog no banco"""
+    meal_log = MealLog(
+        user_id=current_user.id,
+        items=[item.dict() for item in payload.items],
+        carbs_total=payload.carbs_total,
+        insulin_suggested=payload.insulin_suggested,
+        img_url=payload.img_url,
+    )
+    db.add(meal_log)
+    db.commit()
+    db.refresh(meal_log)
+    return meal_log
+
+
+@router.get("/nutrition/meals", response_model=List[MealLogRead])
+async def list_meal_logs(skip: int = 0, limit: int = 20, db: Session = Depends(get_session), current_user=Depends(get_current_user)):
+    """Listar MealLogs do usuário"""
+    statement = select(MealLog).where(MealLog.user_id == current_user.id).order_by(MealLog.created_at.desc()).offset(skip).limit(limit)
+    results = db.exec(statement).all()
+    return results
+
+
+@router.get("/nutrition/portions/off/{barcode}")
+async def get_off_portions(barcode: str):
+    """Devolve estimativas de porção usando dados do OpenFoodFacts (não requer chave).
+    Utiliza `serving_quantity` (em gramas) ou converte `serving_size` quando contém valor em g.
+    Retorna formato idêntico ao endpoint FDC: {foodPortions: [{measureUnit, modifier, gramWeight}]}"""
+    try:
+        url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
+        params = {"fields": "serving_size,serving_quantity"}
+        headers = {
+            "User-Agent": "MelitusGym/0.1 (email@example.com)",
+            "Accept": "application/json"
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params, headers=headers)
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Product not found in OpenFoodFacts")
+            if response.status_code != 200:
+                raise HTTPException(status_code=500, detail="OpenFoodFacts API error")
+            data = response.json().get("product", {})
+
+        servings = []
+        gram_weight: float | None = None
+
+        # Prioridade 1: serving_quantity (número puro, já em gramas segundo OFF docs)
+        if data.get("serving_quantity"):
+            try:
+                gram_weight = float(data["serving_quantity"])
+            except ValueError:
+                gram_weight = None
+        # Prioridade 2: serving_size string, tentar extrair valor em g
+        if gram_weight is None and data.get("serving_size"):
+            import re
+            match = re.search(r"([0-9]+(?:[.,][0-9]+)?)\s*g", data["serving_size"], re.IGNORECASE)
+            if match:
+                gram_weight = float(match.group(1).replace(",", "."))
+
+        if gram_weight:
+            servings.append({
+                "measureUnit": {"name": "g"},
+                "modifier": "serving",
+                "gramWeight": gram_weight
+            })
+        else:
+            # Se não houver info de porção, usar 100g como padrão
+            servings.append({
+                "measureUnit": {"name": "g"},
+                "modifier": "default",
+                "gramWeight": 100.0
+            })
+
+        return {"foodPortions": servings}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching portions from OFF: {str(e)}")

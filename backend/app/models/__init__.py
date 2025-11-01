@@ -32,6 +32,7 @@ from .push_alarm import (
     PushAlarmResponse,
     AlarmType
 )
+from .meal_log import MealLog  # noqa: F401
 
 __all__ = [
     "User",

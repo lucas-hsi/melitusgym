@@ -1,19 +1,25 @@
 "use client";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DaySelector } from "@/components/layout/DaySelector";
+import Sidebar from "@/components/Sidebar";
 
 interface LayoutBaseProps {
   title?: string;
   children: React.ReactNode;
   showDaySelector?: boolean;
+  sidebarDefaultOpen?: boolean;
 }
 
-export default function LayoutBase({ title, children, showDaySelector = true }: LayoutBaseProps) {
+export default function LayoutBase({ title, children, showDaySelector = true, sidebarDefaultOpen = false }: LayoutBaseProps) {
   console.info("[UI-PADRONIZATION] LayoutBase aplicado em todas as páginas.");
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(sidebarDefaultOpen);
   
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 text-gray-900 relative">
+      {/* Sidebar expansível (colapsada por padrão nas páginas) */}
+      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
       {/* Calendário Superior */}
       {showDaySelector && (
         <div className="px-4 pt-6 pb-2">

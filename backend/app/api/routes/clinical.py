@@ -1,23 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session, select, func, and_
-from typing import List, Optional
-from datetime import datetime, timedelta
-
-from ...models import (
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlmodel import Session, select, func, and_, or_
+from typing import Optional, List
+from datetime import datetime, date, timedelta
+from app.models.clinical_log import (
     ClinicalLog, 
     ClinicalLogCreate, 
     ClinicalLogUpdate, 
     ClinicalLogResponse,
     ClinicalLogStats,
     MeasurementType,
-    MeasurementPeriod,
-    GlucoseReading,
-    BloodPressureReading,
-    InsulinDose,
-    User
+    MeasurementPeriod
 )
-from ...services.auth import get_current_user
-from ...services.database import get_session
+# Modelos específicos removidos - usando ClinicalLog genérico
+from app.models.user import User
+from app.services.database import get_session
+from app.services.auth import get_current_user
+from app.core.validators import (
+    validate_clinical_log_data, 
+    PaginationValidator, 
+    ClinicalValidator,
+    APIValidator
+)
+from app.core.exceptions import ValidationError, DatabaseError
+from app.core.logging_config import get_logger
+from app.core.cache import cached
+
+logger = get_logger("api.clinical")
 
 router = APIRouter(prefix="/clinical", tags=["clinical"])
 
@@ -28,73 +36,158 @@ async def create_clinical_log(
     session: Session = Depends(get_session)
 ):
     """Criar um novo registro clínico"""
-    
-    # Se não foi especificado o momento da medição, usar agora
-    if log_data.measured_at is None:
-        log_data.measured_at = datetime.utcnow()
-    
-    clinical_log = ClinicalLog(
-        user_id=current_user.id,
-        **log_data.dict()
-    )
-    
-    session.add(clinical_log)
-    session.commit()
-    session.refresh(clinical_log)
-    
-    return clinical_log
+    try:
+        logger.debug(f"Creating clinical log for user {current_user.id}")
+        
+        # Validação centralizada dos dados clínicos
+        validation_result = validate_clinical_log_data(log_data.model_dump())
+        if not validation_result.is_valid:
+            logger.warning(f"Validation failed: {validation_result.errors}")
+            raise ValidationError(f"Dados inválidos: {', '.join(validation_result.errors)}")
+        
+        # Se não foi especificado o momento da medição, usar agora
+        if log_data.measured_at is None:
+            log_data.measured_at = datetime.utcnow()
+        
+        clinical_log = ClinicalLog(
+            user_id=current_user.id,
+            **log_data.dict()
+        )
+        
+        session.add(clinical_log)
+        session.commit()
+        session.refresh(clinical_log)
+        
+        logger.info(f"Clinical log created successfully for user {current_user.id}, type: {log_data.measurement_type}")
+        return clinical_log
+        
+    except ValidationError:
+        session.rollback()
+        raise
+    except Exception as e:
+        logger.error(f"Database error creating clinical log: {str(e)}")
+        session.rollback()
+        raise DatabaseError("Erro ao salvar registro clínico")
 
 @router.get("/logs", response_model=List[ClinicalLogResponse])
 async def get_clinical_logs(
     measurement_type: Optional[MeasurementType] = None,
     period: Optional[MeasurementPeriod] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-    limit: int = Query(default=50, le=100),
-    offset: int = Query(default=0, ge=0),
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Listar registros clínicos do usuário com filtros"""
-    
-    query = select(ClinicalLog).where(ClinicalLog.user_id == current_user.id)
-    
-    # Aplicar filtros
-    if measurement_type:
-        query = query.where(ClinicalLog.measurement_type == measurement_type)
-    
-    if period:
-        query = query.where(ClinicalLog.period == period)
-    
-    if start_date:
-        query = query.where(ClinicalLog.measured_at >= start_date)
-    
-    if end_date:
-        query = query.where(ClinicalLog.measured_at <= end_date)
-    
-    # Ordenar por data mais recente
-    query = query.order_by(ClinicalLog.measured_at.desc())
-    
-    # Aplicar paginação
-    query = query.offset(offset).limit(limit)
-    
-    logs = session.exec(query).all()
-    return logs
+    """Listar registros clínicos com filtros opcionais"""
+    try:
+        logger.debug(f"Fetching clinical logs for user {current_user.id}")
+        
+        # Validação de paginação
+        pagination_validator = PaginationValidator()
+        if not pagination_validator.validate_skip(skip):
+            raise ValidationError("Parâmetro 'skip' inválido")
+        if not pagination_validator.validate_limit(limit):
+            raise ValidationError("Parâmetro 'limit' inválido")
+        
+        # Validação de período de datas
+        if start_date and end_date:
+            if not pagination_validator.validate_date_range(start_date, end_date):
+                raise ValidationError("Período de datas inválido")
+        
+        # Validação de enum
+        if measurement_type:
+            api_validator = APIValidator()
+            if not api_validator.validate_enum_value(measurement_type, MeasurementType):
+                raise ValidationError("Tipo de medição inválido")
+        
+        # Construir query base com índice otimizado
+        query = select(ClinicalLog).where(ClinicalLog.user_id == current_user.id)
+        
+        # Aplicar filtros
+        if measurement_type:
+            query = query.where(ClinicalLog.measurement_type == measurement_type)
+        
+        if period:
+            # Calcular data de início baseada no período
+            now = datetime.utcnow()
+            if period == MeasurementPeriod.LAST_7_DAYS:
+                period_start = now - timedelta(days=7)
+            elif period == MeasurementPeriod.LAST_30_DAYS:
+                period_start = now - timedelta(days=30)
+            elif period == MeasurementPeriod.LAST_90_DAYS:
+                period_start = now - timedelta(days=90)
+            else:
+                period_start = now - timedelta(days=30)  # default
+            
+            query = query.where(ClinicalLog.measured_at >= period_start)
+        
+        if start_date:
+            query = query.where(ClinicalLog.measured_at >= start_date)
+        
+        if end_date:
+            query = query.where(ClinicalLog.measured_at <= end_date)
+        
+        # Ordenar por data mais recente (índice otimizado)
+        query = query.order_by(ClinicalLog.measured_at.desc())
+        
+        # Aplicar paginação
+        query = query.offset(skip).limit(limit)
+        
+        # Executar query
+        logs = session.exec(query).all()
+        
+        logger.info(f"Retrieved {len(logs)} clinical logs for user {current_user.id}")
+        return logs
+        
+    except ValidationError:
+        raise
+    except Exception as e:
+        logger.error(f"Database error fetching clinical logs: {str(e)}")
+        raise DatabaseError("Erro ao buscar registros clínicos")
 
 @router.get("/logs/{log_id}", response_model=ClinicalLogResponse)
+@cached(ttl=300)  # Cache por 5 minutos
 async def get_clinical_log(
     log_id: int,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """Obter um registro clínico específico"""
-    
-    log = session.get(ClinicalLog, log_id)
-    
-    if not log or log.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Registro não encontrado")
-    
-    return log
+    try:
+        logger.debug(f"Fetching clinical log {log_id} for user {current_user.id}")
+        
+        # Validação do ID
+        if log_id <= 0:
+            raise ValidationError("ID do registro inválido")
+        
+        # Buscar o log com query otimizada
+        query = select(ClinicalLog).where(
+            and_(
+                ClinicalLog.id == log_id,
+                ClinicalLog.user_id == current_user.id
+            )
+        )
+        log = session.exec(query).first()
+        
+        if not log:
+            logger.warning(f"Clinical log {log_id} not found for user {current_user.id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registro não encontrado"
+            )
+        
+        logger.info(f"Retrieved clinical log {log_id} for user {current_user.id}")
+        return log
+        
+    except ValidationError:
+        raise
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Database error fetching clinical log {log_id}: {str(e)}")
+        raise DatabaseError("Erro ao buscar registro clínico")
 
 @router.put("/logs/{log_id}", response_model=ClinicalLogResponse)
 async def update_clinical_log(
@@ -104,22 +197,58 @@ async def update_clinical_log(
     session: Session = Depends(get_session)
 ):
     """Atualizar um registro clínico"""
-    
-    log = session.get(ClinicalLog, log_id)
-    
-    if not log or log.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Registro não encontrado")
-    
-    # Atualizar apenas os campos fornecidos
-    update_data = log_update.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(log, field, value)
-    
-    session.add(log)
-    session.commit()
-    session.refresh(log)
-    
-    return log
+    try:
+        logger.debug(f"Updating clinical log {log_id} for user {current_user.id}")
+        
+        # Validação do ID
+        if log_id <= 0:
+            raise ValidationError("ID do registro inválido")
+        
+        # Validação dos dados de atualização
+        update_data = log_update.model_dump(exclude_unset=True)
+        if update_data:  # Só validar se há dados para atualizar
+            validation_result = validate_clinical_log_data(update_data)
+            if not validation_result.is_valid:
+                logger.warning(f"Update validation failed: {validation_result.errors}")
+                raise ValidationError(f"Dados inválidos: {', '.join(validation_result.errors)}")
+        
+        # Buscar o log existente com query otimizada
+        query = select(ClinicalLog).where(
+            and_(
+                ClinicalLog.id == log_id,
+                ClinicalLog.user_id == current_user.id
+            )
+        )
+        log = session.exec(query).first()
+        
+        if not log:
+            logger.warning(f"Clinical log {log_id} not found for user {current_user.id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registro não encontrado"
+            )
+        
+        # Atualizar os campos
+        for field, value in update_data.items():
+            setattr(log, field, value)
+        
+        session.add(log)
+        session.commit()
+        session.refresh(log)
+        
+        logger.info(f"Updated clinical log {log_id} for user {current_user.id}")
+        return log
+        
+    except ValidationError:
+        session.rollback()
+        raise
+    except HTTPException:
+        session.rollback()
+        raise
+    except Exception as e:
+        logger.error(f"Database error updating clinical log {log_id}: {str(e)}")
+        session.rollback()
+        raise DatabaseError("Erro ao atualizar registro clínico")
 
 @router.delete("/logs/{log_id}")
 async def delete_clinical_log(
@@ -128,136 +257,167 @@ async def delete_clinical_log(
     session: Session = Depends(get_session)
 ):
     """Deletar um registro clínico"""
-    
-    log = session.get(ClinicalLog, log_id)
-    
-    if not log or log.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Registro não encontrado")
-    
-    session.delete(log)
-    session.commit()
-    
-    return {"message": "Registro deletado com sucesso"}
+    try:
+        logger.debug(f"Deleting clinical log {log_id} for user {current_user.id}")
+        
+        # Validação do ID
+        if log_id <= 0:
+            raise ValidationError("ID do registro inválido")
+        
+        # Buscar o log existente com query otimizada
+        query = select(ClinicalLog).where(
+            and_(
+                ClinicalLog.id == log_id,
+                ClinicalLog.user_id == current_user.id
+            )
+        )
+        log = session.exec(query).first()
+        
+        if not log:
+            logger.warning(f"Clinical log {log_id} not found for user {current_user.id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registro não encontrado"
+            )
+        
+        # Deletar o registro
+        session.delete(log)
+        session.commit()
+        
+        logger.info(f"Deleted clinical log {log_id} for user {current_user.id}")
+        return {"message": "Registro deletado com sucesso"}
+        
+    except ValidationError:
+        session.rollback()
+        raise
+    except HTTPException:
+        session.rollback()
+        raise
+    except Exception as e:
+        logger.error(f"Database error deleting clinical log {log_id}: {str(e)}")
+        session.rollback()
+        raise DatabaseError("Erro ao deletar registro clínico")
 
-@router.get("/stats", response_model=List[ClinicalLogStats])
+@router.get("/stats")
+@cached(ttl=600)  # Cache por 10 minutos
 async def get_clinical_stats(
-    days: int = Query(default=30, ge=1, le=365),
+    measurement_type: Optional[MeasurementType] = None,
+    period: Optional[MeasurementPeriod] = None,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """Obter estatísticas dos registros clínicos"""
-    
-    start_date = datetime.utcnow() - timedelta(days=days)
-    
-    # Query para estatísticas por tipo de medição
-    stats_query = (
-        select(
+    try:
+        logger.debug(f"Calculating clinical stats for user {current_user.id}")
+        
+        # Validação de enum
+        if measurement_type:
+            api_validator = APIValidator()
+            if not api_validator.validate_enum_value(measurement_type, MeasurementType):
+                raise ValidationError("Tipo de medição inválido")
+        
+        # Calcular período de tempo
+        now = datetime.utcnow()
+        start_date = None
+        
+        if period:
+            if period == MeasurementPeriod.LAST_7_DAYS:
+                start_date = now - timedelta(days=7)
+            elif period == MeasurementPeriod.LAST_30_DAYS:
+                start_date = now - timedelta(days=30)
+            elif period == MeasurementPeriod.LAST_90_DAYS:
+                start_date = now - timedelta(days=90)
+            else:
+                start_date = now - timedelta(days=30)  # default
+        
+        # Query otimizada com agregações no banco
+        base_conditions = [ClinicalLog.user_id == current_user.id]
+        
+        if measurement_type:
+            base_conditions.append(ClinicalLog.measurement_type == measurement_type)
+        
+        if start_date:
+            base_conditions.append(ClinicalLog.measured_at >= start_date)
+        
+        # Agregações eficientes usando SQL
+        stats_query = select(
             ClinicalLog.measurement_type,
-            func.count(ClinicalLog.id).label("count"),
-            func.avg(ClinicalLog.value).label("avg_value"),
-            func.min(ClinicalLog.value).label("min_value"),
-            func.max(ClinicalLog.value).label("max_value"),
-            func.max(ClinicalLog.measured_at).label("last_measurement")
-        )
-        .where(
-            and_(
-                ClinicalLog.user_id == current_user.id,
-                ClinicalLog.measured_at >= start_date
-            )
-        )
-        .group_by(ClinicalLog.measurement_type)
-    )
-    
-    results = session.exec(stats_query).all()
-    
-    stats = []
-    for result in results:
-        stats.append(ClinicalLogStats(
-            measurement_type=result.measurement_type,
-            count=result.count,
-            avg_value=round(result.avg_value, 2),
-            min_value=result.min_value,
-            max_value=result.max_value,
-            last_measurement=result.last_measurement
-        ))
-    
-    return stats
+            func.count(ClinicalLog.id).label('count'),
+            func.avg(ClinicalLog.value).label('avg_value'),
+            func.min(ClinicalLog.value).label('min_value'),
+            func.max(ClinicalLog.value).label('max_value'),
+            func.max(ClinicalLog.measured_at).label('latest_date')
+        ).where(
+            and_(*base_conditions)
+        ).group_by(ClinicalLog.measurement_type)
+        
+        results = session.exec(stats_query).all()
+        
+        # Formatar estatísticas
+        stats = []
+        for result in results:
+            stat_data = {
+                "measurement_type": result.measurement_type,
+                "count": result.count,
+                "avg_value": round(result.avg_value, 2) if result.avg_value else None,
+                "min_value": result.min_value,
+                "max_value": result.max_value,
+                "latest_date": result.latest_date
+            }
+            stats.append(stat_data)
+        
+        logger.info(f"Calculated stats for {len(stats)} measurement types for user {current_user.id}")
+        return stats
+        
+    except ValidationError:
+        raise
+    except Exception as e:
+        logger.error(f"Database error calculating clinical stats: {str(e)}")
+        raise DatabaseError("Erro ao calcular estatísticas clínicas")
 
 # Rotas específicas para tipos de medição
 
 @router.post("/glucose", response_model=ClinicalLogResponse)
 async def create_glucose_reading(
-    glucose_data: GlucoseReading,
+    glucose_data: ClinicalLogCreate,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """Registrar leitura de glicemia"""
     
-    log_data = ClinicalLogCreate(
-        measurement_type=MeasurementType.GLUCOSE,
-        value=glucose_data.value,
-        unit="mg/dL",
-        period=glucose_data.period,
-        notes=glucose_data.notes,
-        measured_at=glucose_data.measured_at
-    )
+    # Força o tipo de medição para glicemia
+    glucose_data.measurement_type = MeasurementType.GLUCOSE
+    glucose_data.unit = "mg/dL"
     
-    return await create_clinical_log(log_data, current_user, session)
+    return await create_clinical_log(glucose_data, current_user, session)
 
 @router.post("/blood-pressure", response_model=ClinicalLogResponse)
 async def create_blood_pressure_reading(
-    bp_data: BloodPressureReading,
+    bp_data: ClinicalLogCreate,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """Registrar pressão arterial"""
     
-    log_data = ClinicalLogCreate(
-        measurement_type=MeasurementType.BLOOD_PRESSURE,
-        value=bp_data.systolic,
-        secondary_value=bp_data.diastolic,
-        unit="mmHg",
-        notes=bp_data.notes,
-        measured_at=bp_data.measured_at
-    )
+    # Força o tipo de medição para pressão arterial
+    bp_data.measurement_type = MeasurementType.BLOOD_PRESSURE
+    bp_data.unit = "mmHg"
     
-    # Se foi fornecida frequência cardíaca, criar registro separado
-    clinical_log = await create_clinical_log(log_data, current_user, session)
-    
-    if bp_data.heart_rate:
-        hr_data = ClinicalLogCreate(
-            measurement_type=MeasurementType.HEART_RATE,
-            value=bp_data.heart_rate,
-            unit="bpm",
-            measured_at=bp_data.measured_at or datetime.utcnow()
-        )
-        await create_clinical_log(hr_data, current_user, session)
-    
-    return clinical_log
+    return await create_clinical_log(bp_data, current_user, session)
 
 @router.post("/insulin", response_model=ClinicalLogResponse)
 async def create_insulin_dose(
-    insulin_data: InsulinDose,
+    insulin_data: ClinicalLogCreate,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """Registrar dose de insulina"""
     
-    notes = insulin_data.notes or ""
-    if insulin_data.insulin_type:
-        notes += f" | Tipo: {insulin_data.insulin_type}"
-    if insulin_data.injection_site:
-        notes += f" | Local: {insulin_data.injection_site}"
+    # Força o tipo de medição para insulina
+    insulin_data.measurement_type = MeasurementType.INSULIN
+    insulin_data.unit = "unidades"
     
-    log_data = ClinicalLogCreate(
-        measurement_type=MeasurementType.INSULIN,
-        value=insulin_data.units,
-        unit="unidades",
-        notes=notes.strip(" |"),
-        measured_at=insulin_data.measured_at
-    )
-    
-    return await create_clinical_log(log_data, current_user, session)
+    return await create_clinical_log(insulin_data, current_user, session)
 
 @router.get("/glucose/latest", response_model=Optional[ClinicalLogResponse])
 async def get_latest_glucose(
