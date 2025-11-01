@@ -51,8 +51,13 @@ export default function RegisterPage() {
       }
 
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
-        registerData
+        '/auth/register',
+        registerData,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       )
 
       setSuccess(true)
