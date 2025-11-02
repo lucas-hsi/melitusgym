@@ -9,31 +9,20 @@ import os
 logger = get_logger("database")
 
 def get_database_url() -> str:
-    """Obtém a URL do banco de dados baseada na configuração"""
-    
-    # Para desenvolvimento local, usar SQLite
-    # Para produção/Railway, usar PostgreSQL
+    """Obtém a URL do banco de dados do ambiente.
+    - Em testes, usa SQLite em memória.
+    - Em qualquer outro caso, exige DATABASE_URL do ambiente (Railway ou local).
+    """
     # Modo de testes força banco em memória
     if os.getenv("TESTING", "false").lower() == "true":
         return "sqlite:///:memory:"
-    if os.getenv("USE_SQLITE", "true").lower() == "true":
-        # Permitir sobrescrever arquivo sqlite via DATABASE_URL se fornecido
-        return os.getenv("DATABASE_URL", "sqlite:///./healthtrack.db")
-    else:
-        # Usar DATABASE_URL do Railway ou fallback para configuração manual
-        database_url = os.getenv("DATABASE_URL")
-        
-        if database_url:
-            return database_url
-        
-        # Fallback: construir URL a partir de variáveis individuais
-        postgres_user = os.getenv("POSTGRES_USER", "postgres")
-        postgres_password = os.getenv("POSTGRES_PASSWORD", "")
-        postgres_host = os.getenv("POSTGRES_HOST", "localhost")
-        postgres_port = os.getenv("POSTGRES_PORT", "5432")
-        postgres_db = os.getenv("POSTGRES_DB", "healthtrack")
-        
-        return f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
+
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise ValueError("DATABASE_URL não configurado no ambiente!")
+
+    return database_url
 
 def get_engine_kwargs(database_url: str) -> dict:
     """Obtém configurações do engine baseadas no tipo de banco.
@@ -75,11 +64,28 @@ def get_engine_kwargs(database_url: str) -> dict:
 # URL de conexão com o banco
 DATABASE_URL = get_database_url()
 
+# Aviso preventivo se apontar para localhost
+if "localhost" in DATABASE_URL or "127.0.0.1" in DATABASE_URL:
+    logger.warning("⚠️  Atenção: DATABASE_URL está apontando para localhost. Ajuste nas variáveis do Railway.")
+
+# Aviso leve sobre arquivo TACO ausente (não impede startup)
+try:
+    if not os.path.exists("Taco-4a-Edicao.xlsx"):
+        logger.warning("⚠️  Aviso: arquivo Taco-4a-Edicao.xlsx não encontrado, continuando normalmente.")
+except Exception:
+    # Silenciar qualquer erro inesperado nesta verificação opcional
+    pass
+
 # Configurações do engine (decididas pelo DATABASE_URL resolvido)
 engine_kwargs = get_engine_kwargs(DATABASE_URL)
 
-# Criar engine otimizado
-engine = create_engine(DATABASE_URL, **engine_kwargs)
+# Criar engine otimizado com tratamento de erro
+try:
+    engine = create_engine(DATABASE_URL, **engine_kwargs)
+    logger.info("✅ Banco conectado com sucesso.")
+except Exception as e:
+    logger.error(f"❌ Erro ao conectar ao banco: {e}")
+    raise
 
 # Event listeners para monitoramento
 @event.listens_for(engine, "connect")
