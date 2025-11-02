@@ -190,6 +190,13 @@ GET /api/health
 - **Frontend**: Logs disponíveis no painel do Vercel
 - **Local**: Console do navegador e terminal
 
+### Conexão PostgreSQL vs SQLite
+
+- O parâmetro `check_same_thread` é exclusivo do driver SQLite e deve ser usado apenas em desenvolvimento/testes locais.
+- Em produção (Railway/Render com PostgreSQL), NUNCA use `check_same_thread` no `create_engine`.
+- O backend detecta o tipo de banco via `DATABASE_URL` e aplica `check_same_thread` somente quando a URL é do tipo `sqlite:`.
+- Garanta que no ambiente de produção `USE_SQLITE=false` e `DATABASE_URL` aponte para PostgreSQL.
+
 ## 📚 Documentação Adicional
 
 - [Mapa da Aplicação](APP_MAP.md)

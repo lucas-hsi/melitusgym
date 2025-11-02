@@ -35,16 +35,20 @@ def get_database_url() -> str:
         
         return f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
 
-def get_engine_kwargs() -> dict:
-    """Obtém configurações do engine baseadas no tipo de banco"""
+def get_engine_kwargs(database_url: str) -> dict:
+    """Obtém configurações do engine baseadas no tipo de banco.
+    Importante: nunca passar "check_same_thread" para PostgreSQL/psycopg2.
+    """
     
     base_kwargs = {
         "echo": os.getenv("ENVIRONMENT") == "development",
         "pool_pre_ping": True,
     }
     
-    # Configurações específicas para PostgreSQL
-    if os.getenv("USE_SQLITE", "true").lower() != "true":
+    is_sqlite = database_url.startswith("sqlite:") or "sqlite" in database_url
+
+    if not is_sqlite:
+        # Configurações específicas para PostgreSQL (psycopg2)
         base_kwargs.update({
             "poolclass": QueuePool,
             "pool_size": 10,
@@ -61,6 +65,7 @@ def get_engine_kwargs() -> dict:
         # Configurações para SQLite
         base_kwargs.update({
             "connect_args": {
+                # Apenas para SQLite local/testes; NÃO usar em PostgreSQL
                 "check_same_thread": False
             }
         })
@@ -70,8 +75,8 @@ def get_engine_kwargs() -> dict:
 # URL de conexão com o banco
 DATABASE_URL = get_database_url()
 
-# Configurações do engine
-engine_kwargs = get_engine_kwargs()
+# Configurações do engine (decididas pelo DATABASE_URL resolvido)
+engine_kwargs = get_engine_kwargs(DATABASE_URL)
 
 # Criar engine otimizado
 engine = create_engine(DATABASE_URL, **engine_kwargs)
