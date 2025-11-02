@@ -3,14 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from datetime import datetime
-from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, admin, meal_logs
+from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, nutrition_web, admin, meal_logs
 from app.services.database import create_db_and_tables
 from app.services.taco_dynamic_loader import TACODynamicLoader
 from app.services.etl_taco import ingest_taco_excel
 import os
 import asyncio
 from dotenv import load_dotenv
-
 # Carregar variáveis de ambiente
 load_dotenv()
 
@@ -186,6 +185,7 @@ app.include_router(clinical.router, prefix="/api", tags=["clinical"])
 app.include_router(alarms.router, prefix="/api", tags=["alarms"])
 app.include_router(nutrition.router, prefix="/api", tags=["nutrition"])
 app.include_router(nutrition_v2.router, prefix="/api", tags=["nutrition_v2"])
+app.include_router(nutrition_web.router, prefix="/api", tags=["nutrition_web"])
 app.include_router(meal_logs.router, prefix="/api", tags=["meal_logs"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"]) 
 
