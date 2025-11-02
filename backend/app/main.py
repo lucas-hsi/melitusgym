@@ -6,10 +6,10 @@ from datetime import datetime
 from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, admin, meal_logs
 from app.services.database import create_db_and_tables
 from app.services.taco_dynamic_loader import TACODynamicLoader
+from app.services.etl_taco import ingest_taco_excel
 import os
 import asyncio
 from dotenv import load_dotenv
-
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -44,6 +44,19 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Erro ao inicializar banco de dados: {e}")
         raise
+    
+    # Ingestão automática da TACO em produção Railway
+    if os.getenv("ENVIRONMENT") == "production":
+        try:
+            logger.info("📊 Iniciando ingestão automática da base TACO...")
+            taco_file_path = "Taco-4a-Edicao.xlsx"
+            if os.path.exists(taco_file_path):
+                ingest_taco_excel(taco_file_path)
+                logger.info("✅ Ingestão automática da TACO concluída com sucesso")
+            else:
+                logger.warning(f"⚠️ Arquivo TACO não encontrado: {taco_file_path}")
+        except Exception as e:
+            logger.warning(f"⚠️ Erro na ingestão automática da TACO (não crítico): {e}")
     
     # Pré-carregar dados TACO para otimizar performance
     try:
@@ -106,8 +119,8 @@ if not cors_env:
         cors_env = "https://tranquil-vitality-production-15a2.up.railway.app"
     else:
         cors_env = "http://127.0.0.1:3000,http://localhost:3000"
-allow_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
 
+allow_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
 logger.info(f"CORS configurado para: {allow_origins}")
 
 app.add_middleware(
@@ -138,8 +151,6 @@ else:
 
 # 3. Performance monitoring (último para capturar tudo)
 app.add_middleware(PerformanceMiddleware, slow_request_threshold=2.0)
-
-
 
 # Incluir rotas
 app.include_router(health.router, prefix="/api", tags=["health"])
