@@ -67,25 +67,48 @@ export interface InsulinCalculation {
 }
 
 class TacoService {
-  private baseUrl = '/api/nutrition/v2';
+  private baseUrl = '/api';
 
   /**
-   * Busca alimentos na tabela TACO usando endpoint dedicado (otimizado)
+   * Busca alimentos na tabela TBCA usando web scraping (novo método)
    * @param term Termo de busca
-   * @param pageSize Número de resultados por página
    * @returns Resposta da busca
    */
-  async searchTacoFoods(term: string, pageSize: number = 20): Promise<TacoSearchResponse> {
+  async searchTacoFoods(term: string): Promise<TacoSearchResponse> {
     try {
-      const response = await axios.get(`${this.baseUrl}/taco`, {
+      const response = await axios.get(`${this.baseUrl}/search-web`, {
         params: {
-          term,
-          page_size: pageSize
+          q: term
         }
       });
-      return response.data;
+      
+      // Mapeia a resposta da API TBCA para o formato TacoSearchResponse
+      const foods = response.data.foods || [];
+      const mappedItems: TacoFood[] = foods.map((food: any) => ({
+        id: food.id || food.code || '',
+        source: 'tbca',
+        name: food.name || '',
+        category: food.group || undefined,
+        nutrients_per_100g: {
+          energy_kcal: food.energy_kcal || undefined,
+          carbohydrates: food.carbs_g || undefined,
+          proteins: food.protein_g || undefined,
+          fat: food.lipids_g || undefined,
+          fiber: food.fiber_g || undefined,
+          sodium: food.sodium_mg || undefined
+        },
+        glycemic_index: undefined
+      }));
+
+      return {
+        term,
+        sources: ['tbca'],
+        items: mappedItems,
+        total_found: response.data.total || mappedItems.length,
+        search_time_ms: 0
+      };
     } catch (error) {
-      console.error('Erro ao buscar alimentos TACO:', error);
+      console.error('Erro ao buscar alimentos TBCA:', error);
       throw error;
     }
   }
@@ -98,7 +121,7 @@ class TacoService {
    */
   async searchFoods(term: string, pageSize: number = 20): Promise<TacoSearchResponse> {
     try {
-      const response = await axios.get(`${this.baseUrl}/search`, {
+      const response = await axios.get(`${this.baseUrl}/nutrition/v2/search`, {
         params: {
           term,
           page_size: pageSize
@@ -126,7 +149,7 @@ class TacoService {
     portionUnit: string
   ): Promise<ItemWithCalculation> {
     try {
-      const response = await axios.get(`${this.baseUrl}/item`, {
+      const response = await axios.get(`${this.baseUrl}/nutrition/v2/item`, {
         params: {
           id,
           source,
@@ -194,7 +217,7 @@ class TacoService {
     baseUnit: string = '100g'
   ): Promise<CalculationResult> {
     try {
-      const response = await axios.post(`${this.baseUrl}/calc`, {
+      const response = await axios.post(`${this.baseUrl}/nutrition/v2/calc`, {
         nutrients_base: nutrientsBase,
         portion_value: portionValue,
         portion_unit: portionUnit,
