@@ -18,16 +18,28 @@ class TACOConnector:
     async def search_foods(self, term: str, page_size: int = 20) -> Dict[str, Any]:
         """Busca alimentos usando fluxo cache→DB→CSV/XLSX com upsert dinâmico."""
         start_time = datetime.now()
+        logger.info(f"🔍 Iniciando busca TACO - termo: '{term}', página: {page_size}")
 
-        # Use dynamic loader to combine cache, DB and file scan
-        result = self.dynamic_loader.search(term, page_size)
-
-        latency = (datetime.now() - start_time).total_seconds()
-        logger.info(
-            f"TACO search completed - term: {term}, found: {result.get('total_found')}, latency: {latency:.3f}s"
-        )
-        # Maintain compatibility with previous return shape expected by NutritionConnectorService
-        return {"items": result.get("items", []), "total_found": result.get("total_found", 0)}
+        try:
+            # Use dynamic loader to combine cache, DB and file scan
+            result = self.dynamic_loader.search(term, page_size)
+            
+            latency = (datetime.now() - start_time).total_seconds()
+            total_found = result.get('total_found', 0)
+            items_count = len(result.get("items", []))
+            
+            if total_found > 0:
+                logger.info(f"✅ Busca TACO concluída - termo: '{term}', encontrados: {total_found}, retornados: {items_count}, latência: {latency:.3f}s")
+            else:
+                logger.warning(f"⚠️ Busca TACO sem resultados - termo: '{term}', latência: {latency:.3f}s")
+            
+            # Maintain compatibility with previous return shape expected by NutritionConnectorService
+            return {"items": result.get("items", []), "total_found": total_found}
+            
+        except Exception as e:
+            latency = (datetime.now() - start_time).total_seconds()
+            logger.error(f"❌ Erro na busca TACO - termo: '{term}', erro: {str(e)}, latência: {latency:.3f}s")
+            return {"items": [], "total_found": 0}
 
     def _normalize_taco(self, r: TACOFood) -> Dict[str, Any]:
         return {

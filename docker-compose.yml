@@ -39,6 +39,7 @@ services:
       - PIP_NO_CACHE_DIR=1
       - ENABLE_ADMIN_RESET=true
       - ADMIN_RESET_TOKEN=init-reset-2025
+      - TACO_FILE_PATH=/app/Taco-4a-Edicao.xlsx
     ports:
       - "8000:8000"
     depends_on:
@@ -46,6 +47,8 @@ services:
         condition: service_healthy
     networks:
       - healthtrack_network
+    volumes:
+      - ./Taco-4a-Edicao.xlsx:/app/Taco-4a-Edicao.xlsx:ro
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   # Next.js Frontend

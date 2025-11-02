@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, admin, meal_logs
 from app.services.database import create_db_and_tables
+from app.services.taco_dynamic_loader import TACODynamicLoader
 import os
 import asyncio
 from dotenv import load_dotenv
@@ -43,6 +44,28 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Erro ao inicializar banco de dados: {e}")
         raise
+    
+    # Pré-carregar dados TACO para otimizar performance
+    try:
+        logger.info("📊 Iniciando pré-carregamento da base TACO...")
+        taco_loader = TACODynamicLoader()
+        
+        # Verificar se o arquivo TACO existe
+        taco_file_path = taco_loader._resolve_taco_file_path()
+        if not os.path.exists(taco_file_path):
+            logger.warning(f"⚠️ Arquivo TACO não encontrado: {taco_file_path}")
+            logger.warning("⚠️ Sistema funcionará com busca dinâmica apenas")
+        else:
+            logger.info(f"✅ Arquivo TACO encontrado: {taco_file_path}")
+            
+            # Executar busca inicial para popular cache
+            # Isso força a leitura do arquivo e população do cache
+            initial_search = taco_loader.search("arroz", 5)
+            logger.info(f"✅ Cache TACO inicializado - {initial_search.get('total_found', 0)} itens encontrados para 'arroz'")
+            
+    except Exception as e:
+        logger.warning(f"⚠️ Erro no pré-carregamento TACO (não crítico): {e}")
+        logger.info("ℹ️ Sistema continuará com carregamento dinâmico sob demanda")
     
     # Scheduler de FCM desativado (Firebase removido)
     # Mantido vazio para evitar efeitos colaterais no startup

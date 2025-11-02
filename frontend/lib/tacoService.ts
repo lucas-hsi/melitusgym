@@ -70,7 +70,28 @@ class TacoService {
   private baseUrl = '/api/nutrition/v2';
 
   /**
-   * Busca alimentos na tabela TACO
+   * Busca alimentos na tabela TACO usando endpoint dedicado (otimizado)
+   * @param term Termo de busca
+   * @param pageSize Número de resultados por página
+   * @returns Resposta da busca
+   */
+  async searchTacoFoods(term: string, pageSize: number = 20): Promise<TacoSearchResponse> {
+    try {
+      const response = await axios.get(`${this.baseUrl}/taco`, {
+        params: {
+          term,
+          page_size: pageSize
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar alimentos TACO:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca alimentos na tabela TACO (método legado - mantido para compatibilidade)
    * @param term Termo de busca
    * @param pageSize Número de resultados por página
    * @returns Resposta da busca

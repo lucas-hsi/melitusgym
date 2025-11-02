@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import axios from 'axios'
+import axiosInstance from '../lib/axios-config'
 import Sidebar from './Sidebar'
 
 interface User {
@@ -34,8 +34,8 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
           return
         }
 
-        const response = await axios.get<User>(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+        const response = await axiosInstance.get<User>(
+          `/auth/me`,
           {
             headers: {
               Authorization: `Bearer ${token}`

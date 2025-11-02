@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import axios from 'axios'
+import axiosInstance from '../../lib/axios-config'
 
 interface RegisterForm {
   username: string
@@ -50,8 +50,8 @@ export default function RegisterPage() {
         password: formData.password
       }
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
+      await axiosInstance.post(
+        `/auth/register`,
         registerData,
         {
           headers: {

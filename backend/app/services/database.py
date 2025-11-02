@@ -21,6 +21,12 @@ def get_database_url() -> str:
 
     if not database_url:
         raise ValueError("DATABASE_URL não configurado no ambiente!")
+    # Bloqueio extra para evitar deploy quebrado em produção
+    environment = os.getenv("ENVIRONMENT", "development").lower()
+    is_production = environment == "production"
+    if is_production:
+        if database_url.startswith("sqlite") or "localhost" in database_url or "127.0.0.1" in database_url:
+            raise ValueError("DATABASE_URL ausente ou inválida para produção. Corrija variável no Railway!")
 
     return database_url
 
@@ -64,9 +70,7 @@ def get_engine_kwargs(database_url: str) -> dict:
 # URL de conexão com o banco
 DATABASE_URL = get_database_url()
 
-# Aviso preventivo se apontar para localhost
-if "localhost" in DATABASE_URL or "127.0.0.1" in DATABASE_URL:
-    logger.warning("⚠️  Atenção: DATABASE_URL está apontando para localhost. Ajuste nas variáveis do Railway.")
+# Sem fallback: em produção já bloqueamos URLs inválidas acima
 
 # Aviso leve sobre arquivo TACO ausente (não impede startup)
 try:

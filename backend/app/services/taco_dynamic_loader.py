@@ -74,18 +74,28 @@ class TACODynamicLoader:
         default_csv = os.path.join(root, "Taco-4a-Edicao.csv")
         default_xlsx = os.path.join(root, "Taco-4a-Edicao.xlsx")
 
+        logger.info(f"🔍 TACO Dynamic Loader - Resolvendo caminho do arquivo...")
+        logger.info(f"📁 Diretório raiz do projeto: {root}")
+        logger.info(f"🔧 Variável de ambiente {taco_path_env}: {env_path or 'não definida'}")
+        logger.info(f"📄 CSV padrão: {default_csv} (existe: {os.path.exists(default_csv)})")
+        logger.info(f"📊 XLSX padrão: {default_xlsx} (existe: {os.path.exists(default_xlsx)})")
+
         self.taco_file_path = env_path or (default_csv if os.path.exists(default_csv) else default_xlsx)
+        
         if not os.path.exists(self.taco_file_path):
-            logger.warning(
-                f"TACO dynamic loader: file not found at '{self.taco_file_path}'."
-            )
+            logger.error(f"❌ TACO dynamic loader: arquivo não encontrado em '{self.taco_file_path}'")
+            logger.error("❌ Sistema funcionará apenas com dados já existentes no banco")
+        else:
+            file_size = os.path.getsize(self.taco_file_path) / (1024 * 1024)  # MB
+            logger.info(f"✅ Arquivo TACO encontrado: {self.taco_file_path}")
+            logger.info(f"📏 Tamanho do arquivo: {file_size:.2f} MB")
 
         self.cache = InMemoryCache(ttl_seconds=600, max_items=1000)
 
     def _normalize_item(self, row: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "id": "0",
-            "source": "taco_dynamic",
+            "source": "taco_db",
             "name": row.get("name_pt"),
             "brands": None,
             "serving_size": None,

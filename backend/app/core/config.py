@@ -146,17 +146,19 @@ class Settings(BaseSettings):
     
     def get_database_url(self) -> str:
         """Obtém a URL do banco de dados baseada na configuração"""
-        
-        # Se DATABASE_URL está definida, usar ela
+        # Em produção e desenvolvimento, priorize sempre DATABASE_URL
         if self.database_url:
+            # Bloqueio extra para produção
+            if self.is_production and (self.database_url.startswith("sqlite") or "localhost" in self.database_url or "127.0.0.1" in self.database_url):
+                raise ValueError("DATABASE_URL inválida para produção. Use a URL fornecida pelo Railway.")
             return self.database_url
-        
-        # Para desenvolvimento local, usar SQLite por padrão
+
+        # Para desenvolvimento local, permitir SQLite apenas quando explicitamente configurado
         if self.use_sqlite:
             return "sqlite:///./melitusgym.db"
-        
-        # Construir URL PostgreSQL
-        return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+
+        # Sem DATABASE_URL e sem SQLite explícito: falhar para evitar deploy quebrado
+        raise ValueError("DATABASE_URL ausente! Configure no ambiente (Railway/Render).")
     
     # Configuração de Settings
     if SettingsConfigDict:

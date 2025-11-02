@@ -27,6 +27,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Verify TACO file exists in repo root
+      run: |
+        ls -la
+        if [ ! -f Taco-4a-Edicao.xlsx ]; then
+          echo "🚨 Arquivo TACO não encontrado: Taco-4a-Edicao.xlsx"
+          exit 1
+        else
+          echo "✅ Arquivo TACO presente no repositório."
+        fi
     
     - name: Set up Python 3.11
       uses: actions/setup-python@v4

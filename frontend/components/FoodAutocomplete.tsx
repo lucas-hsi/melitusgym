@@ -40,7 +40,7 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
     debounceTimerRef.current = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const response = await tacoService.searchFoods(query);
+        const response = await tacoService.searchTacoFoods(query);
         setResults(response.items);
         setIsOpen(true);
         setHighlightedIndex(-1);
