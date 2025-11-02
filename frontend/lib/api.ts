@@ -3,6 +3,16 @@ import axios from "axios";
 // Usar variável de ambiente para baseURL, com fallback local
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
+// Bloquear uso de localhost em produção para evitar apontamento incorreto
+if (
+  process.env.NODE_ENV === 'production' &&
+  (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1'))
+) {
+  throw new Error(
+    'NEXT_PUBLIC_API_URL inválida em produção. Configure para o backend real, ex.: https://melitusgym-production.up.railway.app/api'
+  );
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
