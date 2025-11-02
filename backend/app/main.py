@@ -37,6 +37,11 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("🚀 Iniciando aplicação Melitus Gym...")
     
+    # Debug: Working directory e arquivos encontrados
+    current_dir = os.getcwd()
+    logger.info(f"📂 Working directory: {current_dir}")
+    logger.info(f"📂 Files in working dir: {os.listdir(current_dir)}")
+    
     # Criar tabelas do banco de dados
     try:
         create_db_and_tables()
@@ -49,12 +54,34 @@ async def lifespan(app: FastAPI):
     if os.getenv("ENVIRONMENT") == "production":
         try:
             logger.info("📊 Iniciando ingestão automática da base TACO...")
-            taco_file_path = "Taco-4a-Edicao.xlsx"
-            if os.path.exists(taco_file_path):
+            
+            # Busca robusta do arquivo TACO para ambiente cloud/Docker
+            taco_file_paths = [
+                # Path relativo ao arquivo atual (backend/app/main.py -> ../../Taco-4a-Edicao.xlsx)
+                os.path.join(os.path.dirname(__file__), '../../Taco-4a-Edicao.xlsx'),
+                # Fallback: root do projeto Docker
+                "/app/Taco-4a-Edicao.xlsx",
+                # Fallback: backend directory
+                "/app/backend/Taco-4a-Edicao.xlsx",
+                # Fallback: working directory
+                "Taco-4a-Edicao.xlsx"
+            ]
+            
+            taco_file_path = None
+            for path in taco_file_paths:
+                resolved_path = os.path.abspath(path)
+                logger.info(f"🔍 Tentando path TACO: {resolved_path}")
+                if os.path.exists(resolved_path):
+                    taco_file_path = resolved_path
+                    logger.info(f"✅ Arquivo TACO encontrado: {taco_file_path}")
+                    break
+            
+            if taco_file_path:
                 ingest_taco_excel(taco_file_path)
                 logger.info("✅ Ingestão automática da TACO concluída com sucesso")
             else:
-                logger.warning(f"⚠️ Arquivo TACO não encontrado: {taco_file_path}")
+                logger.warning(f"⚠️ Arquivo TACO não encontrado em nenhum dos paths tentados")
+                logger.warning(f"⚠️ Paths tentados: {taco_file_paths}")
         except Exception as e:
             logger.warning(f"⚠️ Erro na ingestão automática da TACO (não crítico): {e}")
     
