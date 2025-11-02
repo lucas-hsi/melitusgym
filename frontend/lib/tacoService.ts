@@ -36,174 +36,93 @@ export interface CalculationResult {
     value: number;
     unit: string;
   };
-  base_reference: string;
-  conversion_factor: number;
-  calculation_method: string;
-  latency_ms: number;
-}
-
-export interface ItemWithCalculation {
-  item: {
-    id: string;
-    source: string;
-    name: string;
-    brands?: string;
-    original_serving?: {
-      size?: string | number;
-      quantity?: string;
-    };
+  base: {
+    value: number;
+    unit: string;
   };
-  calculation: CalculationResult;
-  data_source_method: string;
+  conversion_factor: number;
 }
 
-export interface InsulinCalculation {
-  carbs: number;
-  insulinDose: number;
-  correctionDose?: number;
-  totalDose: number;
-  sensitivity: number;
-  highGlycemicAdjustment?: number;
+export interface TacoCategory {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface CategoriesResponse {
+  categories: TacoCategory[];
+  total: number;
+}
+
+interface ErrorResponse {
+  error: string;
+  message?: string;
+  details?: any;
 }
 
 class TacoService {
   private baseUrl = '/api';
 
   /**
-   * Busca alimentos na tabela TBCA usando web scraping (novo método)
+   * Busca alimentos da base TACO
    * @param term Termo de busca
-   * @returns Resposta da busca
+   * @param filters Filtros opcionais (source, category)
+   * @returns Lista de alimentos encontrados
    */
-  async searchTacoFoods(term: string): Promise<TacoSearchResponse> {
+  async searchTacoFoods(
+    term: string,
+    filters?: { source?: string[]; category?: string }
+  ): Promise<TacoSearchResponse> {
     try {
-      const response = await axios.get(`${this.baseUrl}/search-web`, {
-        params: {
-          q: term
-        }
+      if (!term || term.trim().length === 0) {
+        throw new Error('Termo de busca não pode estar vazio');
+      }
+
+      console.log('[TacoService] Buscando alimentos:', { term, filters });
+
+      const params: any = { term };
+      if (filters?.source && filters.source.length > 0) {
+        params.source = filters.source.join(',');
+      }
+      if (filters?.category) {
+        params.category = filters.category;
+      }
+
+      const response = await axios.get('/search-web', {
+        params,
       });
+
+      console.log('[TacoService] Resposta recebida:', response.data);
+
+      return response.data;
+    } catch (error: any) {
+      console.error('[TacoService] Erro ao buscar alimentos:', error);
       
-      // Mapeia a resposta da API TBCA para o formato TacoSearchResponse
-      const foods = response.data.foods || [];
-      const mappedItems: TacoFood[] = foods.map((food: any) => ({
-        id: food.id || food.code || '',
-        source: 'tbca',
-        name: food.name || '',
-        category: food.group || undefined,
-        nutrients_per_100g: {
-          energy_kcal: food.energy_kcal || undefined,
-          carbohydrates: food.carbs_g || undefined,
-          proteins: food.protein_g || undefined,
-          fat: food.lipids_g || undefined,
-          fiber: food.fiber_g || undefined,
-          sodium: food.sodium_mg || undefined
-        },
-        glycemic_index: undefined
-      }));
-
-      return {
-        term,
-        sources: ['tbca'],
-        items: mappedItems,
-        total_found: response.data.total || mappedItems.length,
-        search_time_ms: 0
-      };
-    } catch (error) {
-      console.error('Erro ao buscar alimentos TBCA:', error);
-      throw error;
+      if (error.response?.data) {
+        const errorData = error.response.data as ErrorResponse;
+        throw new Error(errorData.message || errorData.error || 'Erro ao buscar alimentos');
+      }
+      
+      throw new Error('Erro ao conectar com o servidor');
     }
   }
 
   /**
-   * Busca alimentos na tabela TACO (método legado - mantido para compatibilidade)
-   * @param term Termo de busca
-   * @param pageSize Número de resultados por página
-   * @returns Resposta da busca
+   * Obtém categorias disponíveis
+   * @returns Lista de categorias
    */
-  async searchFoods(term: string, pageSize: number = 20): Promise<TacoSearchResponse> {
+  async getCategories(): Promise<CategoriesResponse> {
     try {
-      const response = await axios.get(`${this.baseUrl}/nutrition/v2/search`, {
-        params: {
-          term,
-          page_size: pageSize
-        }
-      });
+      const response = await axios.get(`${this.baseUrl}/categories`);
       return response.data;
     } catch (error) {
-      console.error('Erro ao buscar alimentos:', error);
+      console.error('Erro ao buscar categorias:', error);
       throw error;
     }
   }
 
   /**
-   * Obtém item com cálculo nutricional para porção específica
-   * @param id ID do item
-   * @param source Fonte dos dados
-   * @param portionValue Valor da porção
-   * @param portionUnit Unidade da porção
-   * @returns Item com cálculo nutricional
-   */
-  async getItemWithCalculation(
-    id: string,
-    source: string,
-    portionValue: number,
-    portionUnit: string
-  ): Promise<ItemWithCalculation> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/nutrition/v2/item`, {
-        params: {
-          id,
-          source,
-          portion_value: portionValue,
-          portion_unit: portionUnit
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao obter item com cálculo:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Calcula dose de insulina com base nos carboidratos
-   * @param carbs Quantidade de carboidratos em gramas
-   * @param sensitivity Sensibilidade à insulina (g de carboidratos por 1U de insulina)
-   * @param highGlycemicAdjustment Ajuste percentual para alimentos de alto índice glicêmico (opcional)
-   * @returns Cálculo de insulina
-   */
-  calculateInsulin(
-    carbs: number,
-    sensitivity: number,
-    highGlycemicAdjustment?: number
-  ): InsulinCalculation {
-    if (!carbs || !sensitivity || sensitivity <= 0) {
-      throw new Error('Parâmetros inválidos para cálculo de insulina');
-    }
-
-    // Cálculo básico de insulina
-    const insulinDose = carbs / sensitivity;
-    
-    // Cálculo da dose de correção para alimentos de alto índice glicêmico
-    let correctionDose = 0;
-    if (highGlycemicAdjustment && highGlycemicAdjustment > 0) {
-      correctionDose = (carbs * (highGlycemicAdjustment / 100)) / sensitivity;
-    }
-    
-    // Dose total
-    const totalDose = insulinDose + correctionDose;
-    
-    return {
-      carbs,
-      insulinDose,
-      correctionDose: correctionDose > 0 ? correctionDose : undefined,
-      totalDose,
-      sensitivity,
-      highGlycemicAdjustment
-    };
-  }
-
-  /**
-   * Calcula nutrientes para uma porção específica
+   * Calcula nutrição para uma porção específica usando endpoint do backend
    * @param nutrientsBase Nutrientes base (por 100g)
    * @param portionValue Valor da porção
    * @param portionUnit Unidade da porção
