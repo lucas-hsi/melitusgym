@@ -1,5 +1,4 @@
 // Tipos para o módulo de saúde
-
 export type HealthMetricType = 'glicemia' | 'pressao' | 'hidratacao' | 'peso' | 'treino'
 export type TrendType = 'up' | 'down' | 'stable'
 
