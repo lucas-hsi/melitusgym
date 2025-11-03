@@ -66,6 +66,30 @@ export interface CalculationResult {
   conversion_factor: number;
 }
 
+export interface InsulinCalculation {
+  carbs: number;
+  insulinDose: number;
+  correctionDose?: number;
+  totalDose: number;
+  sensitivity: number;
+  highGlycemicAdjustment?: number;
+}
+
+export interface ItemWithCalculation {
+  item: {
+    id: string;
+    source: string;
+    name: string;
+    brands?: string;
+    original_serving?: {
+      size?: string | number;
+      quantity?: string;
+    };
+  };
+  calculation: CalculationResult;
+  data_source_method: string;
+}
+
 export interface TacoCategory {
   id: string;
   name: string;

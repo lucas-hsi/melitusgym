@@ -3,6 +3,8 @@ import React, { createContext, useContext, useReducer, useCallback } from "react
 import { DayData } from "@/hooks/useDaySelector";
 
 interface HealthProfile {
+  id?: number;
+  nome?: string;
   idade: number;
   peso: number;
   altura: number;
@@ -13,6 +15,15 @@ interface HealthProfile {
   objetivos: string[];
   nivelAtividade: 'sedentario' | 'leve' | 'moderado' | 'intenso';
   insulinSensitivity?: number; // Sensibilidade à insulina (g de carboidratos por 1U)
+  glucoseTarget?: number; // Meta de glicose (mg/dL)
+  tipo_diabetes?: string;
+  metas?: {
+    glicemia_jejum: number;
+    glicemia_pos_refeicao: number;
+    pressao_sistolica: number;
+    pressao_diastolica: number;
+    hidratacao_diaria: number;
+  };
 }
 
 interface HealthMetrics {
