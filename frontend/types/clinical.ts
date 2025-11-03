@@ -61,6 +61,7 @@ export interface HealthProfile {
   peso: number
   altura: number
   tipo_diabetes?: string
+  glucoseTarget?: number
   medicamentos: string[]
   metas: {
     glicemia_jejum: number
