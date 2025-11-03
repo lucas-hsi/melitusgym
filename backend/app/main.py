@@ -3,14 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from datetime import datetime
-from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, admin, meal_logs
+from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, nutrition_web, admin, meal_logs
 from app.services.database import create_db_and_tables
 from app.services.taco_dynamic_loader import TACODynamicLoader
+from app.services.etl_taco import ingest_taco_excel
 import os
 import asyncio
 from dotenv import load_dotenv
-
-
 # Carregar variáveis de ambiente
 load_dotenv()
 
@@ -37,6 +36,11 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("🚀 Iniciando aplicação Melitus Gym...")
     
+    # Debug: Working directory e arquivos encontrados
+    current_dir = os.getcwd()
+    logger.info(f"📂 Working directory: {current_dir}")
+    logger.info(f"📂 Files in working dir: {os.listdir(current_dir)}")
+    
     # Criar tabelas do banco de dados
     try:
         create_db_and_tables()
@@ -44,6 +48,41 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Erro ao inicializar banco de dados: {e}")
         raise
+    
+    # Ingestão automática da TACO em produção Railway
+    if os.getenv("ENVIRONMENT") == "production":
+        try:
+            logger.info("📊 Iniciando ingestão automática da base TACO...")
+            
+            # Busca robusta do arquivo TACO para ambiente cloud/Docker
+            taco_file_paths = [
+                # Path relativo ao arquivo atual (backend/app/main.py -> ../../Taco-4a-Edicao.xlsx)
+                os.path.join(os.path.dirname(__file__), '../../Taco-4a-Edicao.xlsx'),
+                # Fallback: root do projeto Docker
+                "/app/Taco-4a-Edicao.xlsx",
+                # Fallback: backend directory
+                "/app/backend/Taco-4a-Edicao.xlsx",
+                # Fallback: working directory
+                "Taco-4a-Edicao.xlsx"
+            ]
+            
+            taco_file_path = None
+            for path in taco_file_paths:
+                resolved_path = os.path.abspath(path)
+                logger.info(f"🔍 Tentando path TACO: {resolved_path}")
+                if os.path.exists(resolved_path):
+                    taco_file_path = resolved_path
+                    logger.info(f"✅ Arquivo TACO encontrado: {taco_file_path}")
+                    break
+            
+            if taco_file_path:
+                ingest_taco_excel(taco_file_path)
+                logger.info("✅ Ingestão automática da TACO concluída com sucesso")
+            else:
+                logger.warning(f"⚠️ Arquivo TACO não encontrado em nenhum dos paths tentados")
+                logger.warning(f"⚠️ Paths tentados: {taco_file_paths}")
+        except Exception as e:
+            logger.warning(f"⚠️ Erro na ingestão automática da TACO (não crítico): {e}")
     
     # Pré-carregar dados TACO para otimizar performance
     try:
@@ -106,8 +145,8 @@ if not cors_env:
         cors_env = "https://tranquil-vitality-production-15a2.up.railway.app"
     else:
         cors_env = "http://127.0.0.1:3000,http://localhost:3000"
-allow_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
 
+allow_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
 logger.info(f"CORS configurado para: {allow_origins}")
 
 app.add_middleware(
@@ -139,8 +178,6 @@ else:
 # 3. Performance monitoring (último para capturar tudo)
 app.add_middleware(PerformanceMiddleware, slow_request_threshold=2.0)
 
-
-
 # Incluir rotas
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
@@ -148,6 +185,7 @@ app.include_router(clinical.router, prefix="/api", tags=["clinical"])
 app.include_router(alarms.router, prefix="/api", tags=["alarms"])
 app.include_router(nutrition.router, prefix="/api", tags=["nutrition"])
 app.include_router(nutrition_v2.router, prefix="/api", tags=["nutrition_v2"])
+app.include_router(nutrition_web.router, prefix="/api", tags=["nutrition_web"])
 app.include_router(meal_logs.router, prefix="/api", tags=["meal_logs"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"]) 
 

@@ -59,61 +59,93 @@ export interface CalculationResult {
     value: number;
     unit: string;
   };
-  base_reference: string;
-  conversion_factor: number;
-  calculation_method: string;
-  latency_ms: number;
-}
-
-export interface ItemWithCalculation {
-  item: {
-    id: string;
-    source: string;
-    name: string;
-    brands?: string;
-    original_serving?: {
-      size?: string | number;
-      quantity?: string;
-    };
+  base: {
+    value: number;
+    unit: string;
   };
-  calculation: CalculationResult;
-  data_source_method: string;
+  conversion_factor: number;
 }
 
-export interface InsulinCalculation {
-  carbs: number;
-  insulinDose: number;
-  correctionDose?: number;
-  totalDose: number;
-  sensitivity: number;
-  highGlycemicAdjustment?: number;
+export interface TacoCategory {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface CategoriesResponse {
+  categories: TacoCategory[];
+  total: number;
+}
+
+interface ErrorResponse {
+  error: string;
+  message?: string;
+  details?: any;
 }
 
 class TacoService {
-  private baseUrl = '/api/nutrition/v2';
+  private baseUrl = '/api';
 
   /**
-   * Busca alimentos na tabela TACO usando endpoint dedicado (otimizado)
+   * Busca alimentos da base TACO
    * @param term Termo de busca
-   * @param pageSize Número de resultados por página
-   * @returns Resposta da busca
+   * @param filters Filtros opcionais (source, category)
+   * @returns Lista de alimentos encontrados
    */
-  async searchTacoFoods(term: string, pageSize: number = 20): Promise<TacoSearchResponse> {
+  async searchTacoFoods(
+    term: string,
+    filters?: { source?: string[]; category?: string }
+  ): Promise<TacoSearchResponse> {
     try {
-      const response = await axios.get(`${this.baseUrl}/taco`, {
-        params: {
-          term,
-          page_size: pageSize
-        }
+      if (!term || term.trim().length === 0) {
+        throw new Error('Termo de busca não pode estar vazio');
+      }
+
+      console.log('[TacoService] Buscando alimentos:', { term, filters });
+
+      const params: any = { term };
+      if (filters?.source && filters.source.length > 0) {
+        params.source = filters.source.join(',');
+      }
+      if (filters?.category) {
+        params.category = filters.category;
+      }
+
+      const response = await axios.get('/search-web', {
+        params,
       });
+
+      console.log('[TacoService] Resposta recebida:', response.data);
+
+      return response.data;
+    } catch (error: any) {
+      console.error('[TacoService] Erro ao buscar alimentos:', error);
+      
+      if (error.response?.data) {
+        const errorData = error.response.data as ErrorResponse;
+        throw new Error(errorData.message || errorData.error || 'Erro ao buscar alimentos');
+      }
+      
+      throw new Error('Erro ao conectar com o servidor');
+    }
+  }
+
+  /**
+   * Obtém categorias disponíveis
+   * @returns Lista de categorias
+   */
+  async getCategories(): Promise<CategoriesResponse> {
+    try {
+      const response = await axios.get(`${this.baseUrl}/categories`);
       return response.data;
     } catch (error) {
-      console.error('Erro ao buscar alimentos TACO:', error);
+      console.error('Erro ao buscar categorias:', error);
       throw error;
     }
   }
 
   /**
+<<<<<<< HEAD
    * Busca alimentos na TACO usando web scraping (novo endpoint)
    * @param query Termo de busca (mínimo 2 caracteres)
    * @param limit Número máximo de resultados (1-50, padrão: 20)
@@ -262,6 +294,9 @@ class TacoService {
 
   /**
    * Calcula nutrientes para uma porção específica
+=======
+   * Calcula nutrição para uma porção específica usando endpoint do backend
+>>>>>>> 8ec0140021debe97454f9572570fb9e70d123e4c
    * @param nutrientsBase Nutrientes base (por 100g)
    * @param portionValue Valor da porção
    * @param portionUnit Unidade da porção
@@ -275,7 +310,7 @@ class TacoService {
     baseUnit: string = '100g'
   ): Promise<CalculationResult> {
     try {
-      const response = await axios.post(`${this.baseUrl}/calc`, {
+      const response = await axios.post(`${this.baseUrl}/nutrition/v2/calc`, {
         nutrients_base: nutrientsBase,
         portion_value: portionValue,
         portion_unit: portionUnit,

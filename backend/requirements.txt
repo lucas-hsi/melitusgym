@@ -3,11 +3,9 @@
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 sqlmodel==0.0.22
-
 # Database dependencies (binary wheels available)
 psycopg2-binary==2.9.9
 alembic==1.12.1
-
 # Authentication & Security (FIXED: older versions with guaranteed wheels)
 # Avoid cryptography compilation issues
 cryptography==41.0.7
@@ -15,32 +13,32 @@ python-jose==3.3.0
 # Avoid bcrypt compilation issues  
 bcrypt==4.0.1
 passlib==1.7.4
-
 # HTTP & Validation (older stable with wheels)
 httpx==0.25.2
 python-multipart==0.0.6
 python-dotenv==1.0.0
 email-validator==2.1.0
-
 # Pydantic ecosystem (older stable - CRITICAL: avoid pydantic-core Rust builds)
 pydantic==2.5.0
 pydantic-settings==2.1.0
-
 # Utilities with binary wheels
 tenacity==8.2.3
 psutil==5.9.6
-
 # Removed Firebase Cloud Messaging dependencies
 # (aiohttp, google-auth) — Firebase/FCM support deprecated
 requests==2.31.0
-
+beautifulsoup4==4.12.2
+lxml==4.9.3
 # ETL for nutrition (Excel/PDF ingestion)
 openpyxl==3.1.2
 pdfplumber==0.10.3
+<<<<<<< HEAD
 
 # Web Scraping for TACO online
 beautifulsoup4==4.12.2
 lxml==4.9.3
 
+=======
+>>>>>>> 8ec0140021debe97454f9572570fb9e70d123e4c
 # Additional optimization flags
 # Install with: pip install --prefer-binary --no-cache-dir -r requirements.txt

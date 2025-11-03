@@ -1,9 +1,15 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { Calculator, Droplet, AlertCircle, Info, HelpCircle } from 'lucide-react';
-import tacoService, { InsulinCalculation } from '@/lib/tacoService';
+import tacoService from '@/lib/tacoService';
 import { useHealth } from '@/contexts/HealthContext';
+
+// Local type definition (removed from tacoService after refactor)
+interface InsulinCalculation {
+  insulinDose: number;
+  correctionDose: number;
+  totalDose: number;
+}
 
 interface InsulinCalculatorProps {
   totalCarbs: number;
@@ -34,200 +40,132 @@ const InsulinCalculator: React.FC<InsulinCalculatorProps> = ({
     calculateInsulin();
   }, [totalCarbs, sensitivity, highGlycemicAdjustment]);
 
-  // Função para calcular a dose de insulina
   const calculateInsulin = () => {
-    if (totalCarbs <= 0 || sensitivity <= 0) {
-      setCalculation(null);
-      return;
-    }
+    // Dose de insulina base: total de carboidratos / sensibilidade
+    const baseDose = totalCarbs / sensitivity;
 
-    try {
-      const result = tacoService.calculateInsulin(
-        totalCarbs,
-        sensitivity,
-        highGlycemicAdjustment
-      );
-      setCalculation(result);
-    } catch (error) {
-      console.error('Erro ao calcular insulina:', error);
-      setCalculation(null);
-    }
-  };
+    // Ajuste para alto índice glicêmico
+    const adjustmentFactor = 1 + (highGlycemicAdjustment / 100);
+    const adjustedDose = baseDose * adjustmentFactor;
 
-  // Função para formatar número com 1 casa decimal
-  const formatNumber = (value: number): string => {
-    return value.toFixed(1);
+    // Correção adicional baseada na glicemia (se disponível)
+    const currentGlucose = state.profile?.glucoseTarget || 100;
+    const targetGlucose = state.profile?.glucoseTarget || 100;
+    const correctionDose = currentGlucose > targetGlucose 
+      ? (currentGlucose - targetGlucose) / 50 // 1U para cada 50mg/dL acima do alvo
+      : 0;
+
+    setCalculation({
+      insulinDose: Math.round(adjustedDose * 10) / 10,
+      correctionDose: Math.round(correctionDose * 10) / 10,
+      totalDose: Math.round((adjustedDose + correctionDose) * 10) / 10
+    });
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-          <Calculator className="w-5 h-5 mr-2 text-blue-500" />
-          Calculadora de Insulina
-        </h3>
-        <button
-          onClick={() => setShowInfo(!showInfo)}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <HelpCircle className="w-5 h-5 text-gray-500" />
-        </button>
-      </div>
-
-      {showInfo && (
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg text-sm text-gray-700 border border-blue-200">
-          <p className="mb-2 font-medium text-blue-700 text-base">Como funciona a calculadora de insulina:</p>
-          
-          <h5 className="font-medium text-blue-700 mt-3 mb-1">Parâmetros Customizáveis:</h5>
-          <ul className="list-disc pl-5 space-y-2">
-            <li>
-              <b>Sensibilidade à insulina (g/U)</b>: Quantos gramas de carboidratos são metabolizados por 1 unidade de insulina Novorapid.
-              <div className="mt-1 text-xs bg-blue-100 p-2 rounded">
-                <b>Exemplo:</b> Se sua sensibilidade for 15g/U, então 15g de carboidratos requerem 1U de insulina.
-                <br />
-                <b>Personalização:</b> Este valor deve ser ajustado com seu médico com base em seu peso, atividade física e resposta individual à insulina.
-              </div>
-            </li>
-            <li>
-              <b>Ajuste para Alto Índice Glicêmico (%)</b>: Adiciona uma dose extra para alimentos que elevam a glicemia rapidamente.
-              <div className="mt-1 text-xs bg-blue-100 p-2 rounded">
-                <b>Exemplo:</b> Um ajuste de 20% para 45g de carboidratos com sensibilidade de 15g/U adiciona 0,6U à dose básica.
-                <br />
-                <b>Personalização:</b> Use valores mais altos (20-30%) para alimentos como pão branco, arroz branco e doces, e valores mais baixos (0-10%) para alimentos integrais.
-              </div>
-            </li>
-          </ul>
-          
-          <h5 className="font-medium text-blue-700 mt-3 mb-1">Fórmulas de Cálculo:</h5>
-          <div className="bg-white p-3 rounded-lg space-y-2">
-            <div>
-              <b>Dose Básica</b> = Carboidratos ÷ Sensibilidade
-              <div className="text-xs text-gray-500 mt-1">Exemplo: 45g ÷ 15g/U = 3U</div>
-            </div>
-            <div>
-              <b>Dose de Correção</b> = (Carboidratos × Ajuste%) ÷ Sensibilidade
-              <div className="text-xs text-gray-500 mt-1">Exemplo: (45g × 20%) ÷ 15g/U = 0,6U</div>
-            </div>
-            <div>
-              <b>Dose Total</b> = Dose Básica + Dose de Correção
-              <div className="text-xs text-gray-500 mt-1">Exemplo: 3U + 0,6U = 3,6U</div>
-            </div>
-          </div>
-          
-          <div className="mt-3 text-xs text-blue-700 flex items-start">
-            <Info className="w-4 h-4 mr-1 flex-shrink-0 mt-0.5" />
-            <span>A Lantus é uma insulina basal (de ação longa) e deve ser aplicada em horários fixos, independentemente das refeições. Esta calculadora é específica para Novorapid (insulina de ação rápida).</span>
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <Calculator className="w-6 h-6" />
+            Calculadora de Insulina
+          </h2>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          )}
         </div>
-      )}
 
-      <div className="mb-6 p-4 bg-green-50 rounded-lg">
-        <div className="text-center">
-          <div className="text-sm text-gray-600 mb-1">Total de Carboidratos</div>
-          <div className="text-3xl font-bold text-green-600">{totalCarbs.toFixed(1)}g</div>
-        </div>
-      </div>
+        <div className="space-y-4">
+          {/* Total de carboidratos */}
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <div className="text-sm text-blue-600 mb-1">Total de Carboidratos</div>
+            <div className="text-2xl font-bold text-blue-700">{totalCarbs}g</div>
+          </div>
 
-      <div className="space-y-4 mb-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sensibilidade à Insulina (g/U)
-          </label>
-          <div className="flex items-center">
+          {/* Sensibilidade à insulina */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Sensibilidade à Insulina (g/U)
+              <button
+                onClick={() => setShowInfo(!showInfo)}
+                className="ml-2 text-blue-500 hover:text-blue-700"
+              >
+                <HelpCircle className="w-4 h-4 inline" />
+              </button>
+            </label>
             <input
               type="number"
               value={sensitivity}
-              onChange={(e) => setSensitivity(parseFloat(e.target.value) || 0)}
-              min="1"
-              max="50"
-              step="0.5"
+              onChange={(e) => setSensitivity(Number(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="1"
+              step="1"
             />
-            <span className="ml-2 text-gray-600">g/U</span>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Quantos gramas de carboidratos são metabolizados por 1 unidade de insulina
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Ajuste para Alto Índice Glicêmico (%)
-          </label>
-          <div className="flex items-center">
-            <input
-              type="range"
-              value={highGlycemicAdjustment}
-              onChange={(e) => setHighGlycemicAdjustment(parseInt(e.target.value))}
-              min="0"
-              max="50"
-              step="5"
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <span className="ml-2 text-gray-600 min-w-[40px] text-right">
-              {highGlycemicAdjustment}%
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Ajuste para alimentos que elevam a glicemia rapidamente
-          </p>
-        </div>
-      </div>
-
-      {calculation && (
-        <div className="bg-blue-50 rounded-lg p-4 mb-4">
-          <h4 className="font-medium text-gray-800 mb-3">Resultado do Cálculo</h4>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white p-3 rounded-lg">
-              <div className="text-sm text-gray-500">Dose Básica</div>
-              <div className="font-bold text-blue-600">
-                {formatNumber(calculation.insulinDose)} U
-              </div>
-            </div>
-            
-            {calculation.correctionDose && (
-              <div className="bg-white p-3 rounded-lg">
-                <div className="text-sm text-gray-500">Dose de Correção</div>
-                <div className="font-bold text-orange-600">
-                  +{formatNumber(calculation.correctionDose)} U
-                </div>
+            {showInfo && (
+              <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                <Info className="w-4 h-4 inline mr-1" />
+                Quantos gramas de carboidrato 1 unidade de insulina cobre. Exemplo: 15g/U significa que 1U de insulina processa 15g de carboidratos.
               </div>
             )}
-            
-            <div className={`bg-white p-3 rounded-lg ${calculation.correctionDose ? 'col-span-2' : ''}`}>
-              <div className="text-sm text-gray-500">Dose Total</div>
-              <div className="font-bold text-2xl text-blue-700">
-                {formatNumber(calculation.totalDose)} U
+          </div>
+
+          {/* Ajuste de alto índice glicêmico */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ajuste para Alto Índice Glicêmico (%)
+            </label>
+            <input
+              type="number"
+              value={highGlycemicAdjustment}
+              onChange={(e) => setHighGlycemicAdjustment(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="0"
+              max="100"
+              step="5"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Adicione 10-20% para alimentos de alto índice glicêmico (doces, pão branco, etc.)
+            </p>
+          </div>
+
+          {/* Resultados */}
+          {calculation && (
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm opacity-90">Dose Base</span>
+                <span className="font-semibold">{calculation.insulinDose}U</span>
+              </div>
+              {calculation.correctionDose > 0 && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm opacity-90">Correção</span>
+                  <span className="font-semibold">+{calculation.correctionDose}U</span>
+                </div>
+              )}
+              <div className="border-t border-blue-400 pt-2 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-2">
+                    <Droplet className="w-5 h-5" />
+                    Dose Total
+                  </span>
+                  <span className="text-2xl font-bold">{calculation.totalDose}U</span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          {calculation.totalDose > 10 && (
-            <div className="mt-3 flex items-start text-sm">
-              <AlertCircle className="w-4 h-4 text-orange-500 mr-1 mt-0.5 flex-shrink-0" />
-              <span className="text-orange-700">
-                Dose elevada. Considere verificar os valores e consultar seu médico.
-              </span>
-            </div>
           )}
-        </div>
-      )}
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-        <div className="flex items-start">
-          <AlertCircle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
-          <div>
-            <h5 className="font-medium text-yellow-700 mb-1">Orientação Médica Importante</h5>
-            <p className="text-sm text-yellow-700">
-              Esta calculadora é apenas uma <strong>referência</strong> e não substitui a orientação médica profissional.
-            </p>
-            <ul className="list-disc pl-5 mt-2 text-sm text-yellow-700 space-y-1">
-              <li>Ajuste sua sensibilidade à insulina somente com orientação do seu médico</li>
-              <li>O ajuste para alto índice glicêmico deve ser personalizado conforme sua resposta individual</li>
-              <li>Monitore sua glicemia antes e após as refeições para avaliar a eficácia da dose</li>
-              <li>A Novorapid é uma insulina de ação rápida e deve ser aplicada conforme prescrição médica</li>
-              <li>A Lantus é uma insulina basal e não deve ser ajustada com base nesta calculadora</li>
-            </ul>
+          {/* Aviso importante */}
+          <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-yellow-800">
+                <strong>Aviso:</strong> Este é apenas um cálculo estimado. Sempre consulte seu médico ou profissional de saúde antes de ajustar suas doses de insulina.
+              </div>
+            </div>
           </div>
         </div>
       </div>
