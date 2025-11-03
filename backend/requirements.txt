@@ -32,13 +32,8 @@ lxml==4.9.3
 # ETL for nutrition (Excel/PDF ingestion)
 openpyxl==3.1.2
 pdfplumber==0.10.3
-<<<<<<< HEAD
-
 # Web Scraping for TACO online
 beautifulsoup4==4.12.2
 lxml==4.9.3
-
-=======
->>>>>>> 8ec0140021debe97454f9572570fb9e70d123e4c
 # Additional optimization flags
 # Install with: pip install --prefer-binary --no-cache-dir -r requirements.txt
