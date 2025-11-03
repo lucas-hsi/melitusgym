@@ -1,5 +1,4 @@
 // Tipos para o módulo de saúde
-
 export type HealthMetricType = 'glicemia' | 'pressao' | 'hidratacao' | 'peso' | 'treino'
 export type TrendType = 'up' | 'down' | 'stable'
 
@@ -61,6 +60,7 @@ export interface HealthProfile {
   peso: number
   altura: number
   tipo_diabetes?: string
+  glucoseTarget?: number;
   medicamentos: string[]
   metas: {
     glicemia_jejum: number
