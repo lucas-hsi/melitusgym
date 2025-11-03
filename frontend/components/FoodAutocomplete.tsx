@@ -20,6 +20,8 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [searchSource, setSearchSource] = useState<'local' | 'online' | 'both'>('both');
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -29,6 +31,7 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
     if (query.trim().length < 2) {
       setResults([]);
       setIsOpen(false);
+      setErrorMessage('');
       return;
     }
 
@@ -38,18 +41,7 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
     }
 
     debounceTimerRef.current = setTimeout(async () => {
-      setIsLoading(true);
-      try {
-        const response = await tacoService.searchTacoFoods(query);
-        setResults(response.items);
-        setIsOpen(true);
-        setHighlightedIndex(-1);
-      } catch (error) {
-        console.error('Erro ao buscar alimentos:', error);
-        setResults([]);
-      } finally {
-        setIsLoading(false);
-      }
+      await performSearch(query.trim());
     }, 300);
 
     return () => {
@@ -57,7 +49,70 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [query]);
+  }, [query, searchSource]);
+
+  // Função para realizar busca híbrida
+  const performSearch = async (searchTerm: string) => {
+    setIsLoading(true);
+    setErrorMessage('');
+    let foundItems: TacoFood[] = [];
+
+    try {
+      // Busca local primeiro (base de dados)
+      if (searchSource === 'local' || searchSource === 'both') {
+        try {
+          const localResponse = await tacoService.searchTacoFoods(searchTerm);
+          foundItems = localResponse.items;
+          
+          if (foundItems.length > 0) {
+            setResults(foundItems);
+            setIsOpen(true);
+            setHighlightedIndex(-1);
+            setIsLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.warn('Busca local falhou, tentando web scraping...', error);
+        }
+      }
+
+      // Se não encontrou localmente e busca online está habilitada, tenta web scraping
+      if ((searchSource === 'online' || searchSource === 'both') && foundItems.length === 0) {
+        try {
+          const onlineResponse = await tacoService.searchTacoOnline(searchTerm, 20);
+          
+          if (onlineResponse.items && onlineResponse.items.length > 0) {
+            // Converte resultados online para formato TacoFood
+            const convertedItems = onlineResponse.items.map(item => 
+              tacoService.convertTacoOnlineToTacoFood(item)
+            );
+            foundItems = convertedItems;
+            setResults(convertedItems);
+            setIsOpen(true);
+            setHighlightedIndex(-1);
+          } else if (onlineResponse.error) {
+            setErrorMessage(onlineResponse.message || 'Serviço temporariamente indisponível');
+          }
+        } catch (error: any) {
+          console.error('Busca online falhou:', error);
+          setErrorMessage(error.message || 'Erro ao buscar alimentos online');
+        }
+      }
+
+      // Se não encontrou em nenhuma fonte
+      if (foundItems.length === 0) {
+        setResults([]);
+        setIsOpen(true);
+      }
+
+    } catch (error) {
+      console.error('Erro na busca de alimentos:', error);
+      setResults([]);
+      setErrorMessage('Erro ao buscar alimentos. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Fecha o dropdown quando clica fora
   useEffect(() => {
@@ -167,7 +222,14 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
                   highlightedIndex === index ? 'bg-blue-50' : ''
                 }`}
               >
-                <div className="font-medium text-gray-800">{food.name}</div>
+                <div className="flex items-start justify-between">
+                  <div className="font-medium text-gray-800">{food.name}</div>
+                  {food.source === 'taco_online' && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full flex-shrink-0">
+                      Online
+                    </span>
+                  )}
+                </div>
                 {food.category && (
                   <div className="text-xs text-gray-500">{food.category}</div>
                 )}
@@ -186,8 +248,20 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
       )}
 
       {isOpen && query.trim().length >= 2 && results.length === 0 && !isLoading && (
-        <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4 text-center text-gray-500">
-          Nenhum alimento encontrado
+        <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4 text-center">
+          {errorMessage ? (
+            <div className="text-red-500 text-sm">
+              <p className="font-medium">⚠️ {errorMessage}</p>
+              <p className="text-xs text-gray-500 mt-1">Tente outro termo de busca</p>
+            </div>
+          ) : (
+            <div className="text-gray-500">
+              <p>Nenhum alimento encontrado</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Buscando em: base local {searchSource === 'both' ? '+ web scraping' : ''}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

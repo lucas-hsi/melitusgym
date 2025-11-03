@@ -81,41 +81,42 @@ async def ingest_taco(
 
 @router.get("/taco", response_model=SearchResponse)
 async def get_taco_foods(
-    term: str = Query(..., min_length=2, max_length=100, description="Termo de busca"),
-    page_size: int = Query(20, ge=1, le=50, description="Número de resultados")
+    query: str = Query(..., min_length=2, max_length=100, description="Termo de busca", alias="term"),
+    limit: int = Query(20, ge=1, le=50, description="Número máximo de resultados", alias="page_size")
 ):
-    """Endpoint dedicado para busca na base TACO - otimizado para frontend."""
+    """Endpoint para busca na base TACO - otimizado para frontend."""
     
     start_time = datetime.now()
     
     try:
-        logger.info(f"TACO search - term: {term}, page_size: {page_size}")
+        logger.info(f"🔍 Busca TACO - termo: '{query}', limite: {limit}")
         
         # Busca direta no conector TACO
         taco_connector = connector_service.taco_connector
-        taco_data = await taco_connector.search_foods(term, page_size)
+        taco_data = await taco_connector.search_foods(query, limit)
         
         # Calcula tempo de busca
         search_time = (datetime.now() - start_time).total_seconds() * 1000
         
         # Converte para modelo de resposta
         response = SearchResponse(
-            term=term,
-            sources=["taco_db"],
+            term=query,
+            sources=["taco_local"],
             items=taco_data.get("items", []),
             total_found=taco_data.get("total_found", 0),
             search_time_ms=round(search_time, 2)
         )
         
         logger.info(
-            f"TACO search completed - term: {term}, found: {response.total_found}, "
-            f"time: {search_time:.2f}ms"
+            f"✅ Busca TACO concluída - termo: '{query}', "
+            f"encontrados: {response.total_found}, "
+            f"tempo: {search_time:.2f}ms"
         )
         
         return response
         
     except Exception as e:
-        logger.error(f"TACO search failed - term: {term}, error: {str(e)}")
+        logger.error(f"❌ Erro na busca TACO - termo: '{query}', erro: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail={

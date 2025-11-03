@@ -30,6 +30,29 @@ export interface TacoSearchResponse {
   search_time_ms?: number;
 }
 
+export interface TacoOnlineSearchResponse {
+  query: string;
+  items: Array<{
+    nome: string;
+    categoria: string;
+    kcal: number | null;
+    carb: number | null;
+    prot: number | null;
+    lip: number | null;
+    fibra: number | null;
+    porcao: string;
+    porcao_gr: number;
+  }>;
+  count: number;
+  total_found: number;
+  source: string;
+  cached: boolean;
+  search_time_ms: number;
+  timestamp: string;
+  error?: string;
+  message?: string;
+}
+
 export interface CalculationResult {
   nutrients: TacoNutrient;
   portion: {
@@ -88,6 +111,64 @@ class TacoService {
       console.error('Erro ao buscar alimentos TACO:', error);
       throw error;
     }
+  }
+
+  /**
+   * Busca alimentos na TACO usando web scraping (novo endpoint)
+   * @param query Termo de busca (mínimo 2 caracteres)
+   * @param limit Número máximo de resultados (1-50, padrão: 20)
+   * @returns Resposta da busca com dados do web scraping
+   */
+  async searchTacoOnline(query: string, limit: number = 20): Promise<TacoOnlineSearchResponse> {
+    try {
+      // Validação de entrada
+      if (!query || query.trim().length < 2) {
+        throw new Error('O termo de busca deve ter pelo menos 2 caracteres');
+      }
+
+      if (limit < 1 || limit > 50) {
+        throw new Error('O limite deve estar entre 1 e 50');
+      }
+
+      const response = await axios.get('/api/taco/search', {
+        params: {
+          query: query.trim(),
+          limit
+        }
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Erro ao buscar alimentos TACO online:', error);
+      
+      // Se o erro veio do backend, tenta extrair mensagem
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
+   * Converte resultado do web scraping TACO para formato TacoFood
+   * @param item Item do web scraping
+   * @returns Objeto TacoFood normalizado
+   */
+  convertTacoOnlineToTacoFood(item: TacoOnlineSearchResponse['items'][0]): TacoFood {
+    return {
+      id: `taco_online_${item.nome.toLowerCase().replace(/\s+/g, '_')}`,
+      source: 'taco_online',
+      name: item.nome,
+      category: item.categoria,
+      nutrients_per_100g: {
+        energy_kcal: item.kcal ?? undefined,
+        carbohydrates: item.carb ?? undefined,
+        proteins: item.prot ?? undefined,
+        fat: item.lip ?? undefined,
+        fiber: item.fibra ?? undefined,
+      }
+    };
   }
 
   /**

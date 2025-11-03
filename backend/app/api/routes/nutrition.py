@@ -11,6 +11,7 @@ from sqlmodel import Session, select
 # from app.schemas.meal_log import MealLogCreate, MealLogRead
 from app.services.database import get_session
 from app.services.auth import get_current_user
+from app.services.taco_scraper import get_taco_scraper
 
 router = APIRouter()
 
@@ -409,3 +410,90 @@ async def get_off_portions(barcode: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching portions from OFF: {str(e)}")
+
+
+@router.get("/taco/search")
+async def search_taco_online(query: str, limit: int = 20):
+    """
+    Busca alimentos na base TACO usando web scraping.
+    
+    Args:
+        query: Termo de busca (mínimo 2 caracteres)
+        limit: Número máximo de resultados (1-50)
+    
+    Returns:
+        JSON com campos: nome, categoria, kcal, carb, prot, lip, fibra, porcao, porcao_gr
+    
+    Exemplo:
+        GET /api/taco/search?query=arroz&limit=10
+    """
+    try:
+        # Validação de entrada
+        if not query or len(query) < 2:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "invalid_query",
+                    "message": "O termo de busca deve ter pelo menos 2 caracteres",
+                    "timestamp": datetime.now().isoformat()
+                }
+            )
+        
+        if limit < 1 or limit > 50:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "invalid_limit",
+                    "message": "O limite deve estar entre 1 e 50",
+                    "timestamp": datetime.now().isoformat()
+                }
+            )
+        
+        # Obtém instância do scraper
+        scraper = get_taco_scraper()
+        
+        # Realiza busca com scraping
+        result = scraper.search_foods(query, limit)
+        
+        # Verifica se houve erro no scraping
+        if "error" in result and result["error"]:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "query": query,
+                    "items": [],
+                    "count": 0,
+                    "error": result["error"],
+                    "message": "Serviço de scraping TACO temporariamente indisponível",
+                    "timestamp": datetime.now().isoformat()
+                }
+            )
+        
+        # Retorna resultado de sucesso
+        return JSONResponse(
+            content={
+                "query": result["query"],
+                "items": result["items"],
+                "count": result["count"],
+                "total_found": result.get("total_found", result["count"]),
+                "source": result["source"],
+                "cached": result.get("cached", False),
+                "search_time_ms": result.get("search_time_ms", 0),
+                "timestamp": datetime.now().isoformat()
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "query": query,
+                "items": [],
+                "count": 0,
+                "error": "internal_error",
+                "message": f"Erro ao buscar alimentos TACO: {str(e)}",
+                "timestamp": datetime.now().isoformat()
+            }
+        )
