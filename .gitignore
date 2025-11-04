@@ -144,6 +144,8 @@ PIPFILE.lock
 *.sqlite
 *.sqlite3
 healthtrack.db
+backend/healthtrack.db-shm
+backend/healthtrack.db-wal
 
 # Allow tracking specific frontend lib files
 !frontend/lib/api.ts
@@ -216,3 +218,13 @@ local.settings.json
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# API test responses (do not version)
+frontend/taco_local_response.json
+frontend/taco_online_response.json
+
+# TACO XLSX pesado (não versionar)
+Taco-4a-Edicao.xlsx
+
+# Arquivos temporários
+*.tmp

@@ -236,3 +236,24 @@ Admin Reset (uso inicial apenas):
    4. Desabilite `ENABLE_ADMIN_RESET` em produção após a inicialização.
 
 Observação: após a inicialização, remova/desabilite o reset para evitar uso indevido.
+
+## 🍽️ Ingestão TACO via CSV (Railway)
+
+Para popular/repopular a base de alimentos TACO no banco PostgreSQL da Railway usando arquivos leves:
+
+- Converter o XLSX para CSV leve com pandas:
+  - `python backend/scripts/export_taco_to_csv.py --xlsx Taco-4a-Edicao.xlsx --csv taco_export.csv`
+  - O CSV gerado já usa headers compatíveis com a tabela `taco_foods`.
+- Ingerir o CSV diretamente no banco cloud:
+  - Configure `DATABASE_URL` no seu ambiente local (string de conexão PostgreSQL da Railway).
+  - `python backend/scripts/ingest_csv_to_cloud.py --csv taco_export.csv`
+- Boas práticas de versionamento:
+  - Não versionamos o XLSX pesado: `Taco-4a-Edicao.xlsx` está no `.gitignore`.
+  - Versionamos apenas `taco_export.csv` e os scripts.
+
+Automação futura:
+- Novos CSVs pequenos podem ser ingeridos repetindo o comando `python backend/scripts/ingest_csv_to_cloud.py` após gerar o arquivo.
+
+Validação no frontend:
+- Após a ingestão, acessar `http://localhost:3000/nutricao` e buscar itens como `arroz` ou `banana`.
+- Em produção, o backend usa cache e busca direta no banco; a ingestão de startup é idempotente e pula se a tabela já estiver populada.
