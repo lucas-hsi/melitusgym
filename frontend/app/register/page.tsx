@@ -51,7 +51,7 @@ export default function RegisterPage() {
       }
 
       await axiosInstance.post(
-        `/api/auth/register`,  // http://localhost:8000/api/auth/register
+        `/auth/register`,
         registerData,
         {
           headers: {

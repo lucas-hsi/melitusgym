@@ -1,7 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
 
 // Determinar baseURL da API a partir do ambiente
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+const RAW_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+// Normalizar baseURL para sempre conter "/api" e evitar barras duplicadas
+const trimTrailingSlash = (url: string) => url.replace(/\/+$/, '');
+const trimmed = trimTrailingSlash(RAW_BASE_URL);
+const API_BASE_URL = trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
 
 // Bloquear uso de localhost em produção para evitar apontamento incorreto
 if (
