@@ -9,7 +9,7 @@ const resolveRawBaseUrl = (): string => {
     return 'https://melitusgym-production.up.railway.app/api';
   }
   // Ambiente de desenvolvimento local
-  return 'http://127.0.0.1:8000';
+  return 'http://127.0.0.1:8000/api';
 };
 const RAW_BASE_URL = resolveRawBaseUrl();
 

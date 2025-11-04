@@ -43,10 +43,10 @@ const NutritionCalculator: React.FC<NutritionCalculatorProps> = ({
     { id: 'handful', name: '1 Punhado', grams: 25, description: '~25g' }
   ];
 
-  // Calcula nutrientes quando a quantidade muda
+  // Calcula nutrientes quando a quantidade ou o alimento mudam
   useEffect(() => {
     calculateNutrition();
-  }, [selectedGrams]);
+  }, [selectedGrams, food]);
 
   // Manipula seleção de preset
   const handlePresetSelect = (preset: PortionPreset) => {
@@ -108,7 +108,7 @@ const NutritionCalculator: React.FC<NutritionCalculatorProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000] p-4">
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
@@ -120,7 +120,12 @@ const NutritionCalculator: React.FC<NutritionCalculatorProps> = ({
             onClick={onCancel}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
-            <Minus className="w-5 h-5" />
+            <span className="sr-only">Fechar</span>
+            {/* Ícone de fechar para melhor UX */}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
@@ -250,7 +255,7 @@ const NutritionCalculator: React.FC<NutritionCalculatorProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex space-x-3 p-4 border-t bg-gray-50">
+        <div className="flex space-x-3 p-4 border-t bg-gray-50 sticky bottom-0 z-[1001]">
           <button
             onClick={onCancel}
             className="flex-1 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

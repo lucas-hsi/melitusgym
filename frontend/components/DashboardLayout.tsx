@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import axiosInstance from '../lib/axios-config'
 import Sidebar from './Sidebar'
@@ -23,6 +23,7 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -30,7 +31,9 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
         const token = localStorage.getItem('token')
         
         if (!token) {
-          router.push('/login')
+          if (pathname !== '/login') {
+            router.replace('/login')
+          }
           return
         }
 
@@ -47,14 +50,16 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
       } catch (error) {
         console.error('Erro ao buscar dados do usuário:', error)
         localStorage.removeItem('token')
-        router.push('/login')
+        if (pathname !== '/login') {
+          router.replace('/login')
+        }
       } finally {
         setLoading(false)
       }
     }
 
     fetchUserData()
-  }, [router])
+  }, [router, pathname])
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)

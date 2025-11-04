@@ -68,10 +68,29 @@ def _map_headers(headers: List[str]) -> Dict[str, int]:
     # nutrients
     mapping["energy_kcal_100g"] = find_exact("energy_kcal_100g") or find_idx("energia", "kcal") or find_idx("kcal")
     mapping["energy_kj_100g"] = find_exact("energy_kj_100g") or find_idx("energia", "kj") or find_idx("kj")
-    mapping["carbohydrates_100g"] = find_exact("carbohydrates_100g") or find_idx("carbo", "g") or find_idx("carboidratos")
-    mapping["proteins_100g"] = find_exact("proteins_100g") or find_idx("proteina")
+    # carboidratos: cobrir variações como "carboidrato", "carbo", "carboidratos disponíveis", etc.
+    mapping["carbohydrates_100g"] = (
+        find_exact("carbohydrates_100g")
+        or find_idx("carbo", "g")
+        or find_idx("carboidratos")
+        or find_idx("carboidrato")
+        or find_idx("idrato")
+        or find_idx("carbo")
+        or find_idx("carboidratos", "total")
+        or find_idx("carboidrato", "total")
+        or find_idx("carboidratos", "disponiveis")
+        or find_idx("disponiveis", "carbo")
+    )
+    # proteínas: cobrir plural e abreviações
+    mapping["proteins_100g"] = (
+        find_exact("proteins_100g")
+        or find_idx("proteina")
+        or find_idx("proteinas")
+        or find_idx("proteina", "g")
+        or find_idx("prot")
+    )
     mapping["fat_100g"] = find_exact("fat_100g") or find_idx("lipidio") or find_idx("gordura")
-    mapping["fiber_100g"] = find_exact("fiber_100g") or find_idx("fibra")
+    mapping["fiber_100g"] = find_exact("fiber_100g") or find_idx("fibra") or find_idx("alimentar")
     mapping["sugars_100g"] = find_exact("sugars_100g") or find_idx("acucar") or find_idx("açucar") or find_idx("sacarose")
     mapping["sodium_mg_100g"] = find_exact("sodium_mg_100g") or find_idx("sodio") or find_idx("sódio")
     mapping["glycemic_index"] = find_exact("glycemic_index") or find_idx("indice", "glicemico") or find_idx("ig")

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext'
 
 interface ProtectedRouteProps {
@@ -17,23 +17,28 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     if (!isLoading) {
       // Se não está autenticado, redirecionar para login
       if (!isAuthenticated) {
-        router.push(redirectTo)
+        if (pathname !== redirectTo) {
+          router.replace(redirectTo)
+        }
         return
       }
 
       // Se está autenticado mas não tem o perfil necessário
       if (requiredProfile !== 'all') {
         // Redirecionar para página de acesso negado ou dashboard
-        router.push('/dashboard')
+        if (pathname !== '/dashboard') {
+          router.replace('/dashboard')
+        }
         return
       }
     }
-  }, [isAuthenticated, isLoading, user, requiredProfile, router, redirectTo])
+  }, [isAuthenticated, isLoading, user, requiredProfile, router, redirectTo, pathname])
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {

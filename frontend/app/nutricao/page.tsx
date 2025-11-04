@@ -69,12 +69,19 @@ export default function NutricaoPage() {
     type: 'success' | 'error' | 'info';
     text: string;
   } | null>(null);
+
+  // Estado para controlar exibição da Calculadora de Insulina quando houver carboidratos
+  const [showMealCalculator, setShowMealCalculator] = useState(false);
+  // Estado para controlar abertura do dropdown de busca
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   
   // Estado para notas da refeição
   const [mealNotes, setMealNotes] = useState('');
   
   // Estado para momento da refeição
   const [mealTime, setMealTime] = useState('lunch');
+  // Estado para edição de refeição existente
+  const [editingMealId, setEditingMealId] = useState<number | null>(null);
 
   // Carregar histórico de refeições ao iniciar
   useEffect(() => {
@@ -86,6 +93,8 @@ export default function NutricaoPage() {
     calculateDishTotals();
   }, [currentDish]);
 
+  // Abertura da calculadora será disparada ao finalizar o prato
+
   // Função para carregar histórico de refeições
   const loadMealHistory = async () => {
     setIsLoading(true);
@@ -94,10 +103,7 @@ export default function NutricaoPage() {
       setMealLogs(logs);
     } catch (error) {
       console.error('Erro ao carregar histórico de refeições:', error);
-      setMessage({
-        type: 'error',
-        text: 'Não foi possível carregar o histórico de refeições.'
-      });
+      // Não exibir banner de erro para falha no histórico
     } finally {
       setIsLoading(false);
     }
@@ -169,20 +175,27 @@ export default function NutricaoPage() {
     setCurrentDish(prev => prev.filter(item => item.id !== id));
   };
 
-  // Função para salvar refeição
-  const handleSaveMeal = async () => {
+  // Finaliza e salva a refeição com metadados de insulina (via notas)
+  const finalizeSaveMeal = async (insulin: {
+    totalCarbs: number;
+    glucose?: number;
+    measured?: boolean;
+    timing?: 'before' | 'after';
+    suggestedDose: number;
+    usedDose: number;
+  }) => {
     if (currentDish.length === 0) {
-      setMessage({
-        type: 'error',
-        text: 'Adicione pelo menos um alimento ao prato atual.'
-      });
+      setMessage({ type: 'error', text: 'Adicione pelo menos um alimento ao prato atual.' });
       return;
     }
-    
+
     setIsSaving(true);
-    
+
     try {
       // Preparar dados para salvar
+      const insulinNote = `insulin_meta=${JSON.stringify(insulin)}`;
+      const combinedNotes = [mealNotes, insulinNote].filter(Boolean).join(' | ');
+
       const mealLogData: MealLogCreate = {
         meal_time: mealTime,
         meal_date: selectedDate.toISOString(),
@@ -194,36 +207,52 @@ export default function NutricaoPage() {
           nutrients: item.calculatedNutrients
         })),
         total_nutrients: dishTotals,
-        notes: mealNotes || undefined
+        notes: combinedNotes || undefined
       };
-      
-      // Salvar refeição
-      await mealLogService.createMealLog(mealLogData);
-      
-      // Limpar prato atual
+
+      // Criar ou atualizar refeição conforme modo
+      if (editingMealId) {
+        await mealLogService.updateMealLog(editingMealId, mealLogData);
+      } else {
+        await mealLogService.createMealLog(mealLogData);
+      }
+
+      // Limpar prato atual e fechar calculadora
       setCurrentDish([]);
       setMealNotes('');
-      
+      setEditingMealId(null);
+      setShowMealCalculator(false);
+
       // Recarregar histórico
       await loadMealHistory();
-      
-      // Mostrar mensagem de sucesso
+
+      // Mensagem de sucesso e mudar aba
       setMessage({
         type: 'success',
-        text: 'Refeição salva com sucesso!'
+        text: editingMealId ? 'Refeição atualizada com sucesso!' : 'Refeição salva com sucesso!'
       });
-      
-      // Mudar para a aba de histórico
       setActiveTab('history');
     } catch (error) {
       console.error('Erro ao salvar refeição:', error);
-      setMessage({
-        type: 'error',
-        text: 'Não foi possível salvar a refeição.'
-      });
+      // Garantir fechamento da calculadora também em caso de erro
+      setShowMealCalculator(false);
+      setMessage({ type: 'error', text: 'Não foi possível salvar a refeição.' });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Função para salvar refeição
+  const handleSaveMeal = async () => {
+    if (currentDish.length === 0) {
+      setMessage({
+        type: 'error',
+        text: 'Adicione pelo menos um alimento ao prato atual.'
+      });
+      return;
+    }
+    // Em vez de salvar direto, abrir calculadora de insulina para coletar metadados
+    setShowMealCalculator(true);
   };
 
   // Função para editar refeição
@@ -246,6 +275,7 @@ export default function NutricaoPage() {
     setMealTime(mealLog.meal_time);
     setMealNotes(mealLog.notes || '');
     setDishTotals(mealLog.total_nutrients);
+    setEditingMealId(mealLog.id);
     
     // Mudar para a aba de refeição
     setActiveTab('meal');
@@ -257,9 +287,46 @@ export default function NutricaoPage() {
     });
   };
 
-  // Função para selecionar alimento
-  const handleSelectFood = (food: TacoFood) => {
-    setSelectedFood(food);
+  // Cancelar edição
+  const cancelEdit = () => {
+    setEditingMealId(null);
+    setMessage({ type: 'info', text: 'Modo edição cancelado.' });
+  };
+
+  // Enriquecer alimento com dados da TBCA se macros estiverem ausentes
+  const enrichFoodIfNeeded = async (food: TacoFood): Promise<TacoFood> => {
+    const base = food.nutrients_per_100g || {};
+    const hasCarbs = base.carbohydrates !== undefined && base.carbohydrates !== null;
+    const hasProteins = base.proteins !== undefined && base.proteins !== null;
+
+    if (hasCarbs && hasProteins) {
+      return food;
+    }
+
+    try {
+      const online = await tacoService.searchTacoOnline(food.name, 1);
+      if (online.items && online.items.length > 0) {
+        const converted = tacoService.convertTacoOnlineToTacoFood(online.items[0]);
+        return {
+          ...food,
+          nutrients_per_100g: {
+            ...food.nutrients_per_100g,
+            ...converted.nutrients_per_100g,
+          },
+          // manter a fonte original; categoria pode vir do online se ausente
+          category: food.category || converted.category,
+        };
+      }
+    } catch (e) {
+      console.warn('Falha ao enriquecer alimento via TBCA online:', e);
+    }
+    return food;
+  };
+
+  // Função para selecionar alimento (com enriquecimento de dados)
+  const handleSelectFood = async (food: TacoFood) => {
+    const enriched = await enrichFoodIfNeeded(food);
+    setSelectedFood(enriched);
   };
 
   // Renderiza mensagem
@@ -350,15 +417,17 @@ export default function NutricaoPage() {
           {/* Aba de Refeição */}
           {activeTab === 'meal' && (
             <>
-              {/* Busca de Alimentos */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Buscar Alimentos</h3>
-                <FoodAutocomplete onSelect={handleSelectFood} />
-              </div>
+              {/* Busca de Alimentos (oculta enquanto houver alimento selecionado/modal ativo) */}
+              {!selectedFood && (
+                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 relative z-[2000]">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Buscar Alimentos</h3>
+                  <FoodAutocomplete onSelect={handleSelectFood} onOpenChange={setIsSearchOpen} />
+                </div>
+              )}
               
               {/* Prato Atual */}
               {currentDish.length > 0 && (
-                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
+                <div className={`bg-white/60 backdrop-blur-sm rounded-2xl p-6 relative ${isSearchOpen ? 'z-[-1]' : 'z-0'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-800">Prato Atual</h3>
                     <div className="text-sm text-gray-600">
@@ -438,29 +507,43 @@ export default function NutricaoPage() {
                     </div>
                   </div>
                   
-                  <button
-                    onClick={handleSaveMeal}
-                    disabled={isSaving}
-                    className="w-full bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Salvando...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5 mr-2" />
-                        Salvar Refeição
-                      </>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={handleSaveMeal}
+                      disabled={isSaving}
+                      className="w-full bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSaving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-5 h-5 mr-2" />
+                          {editingMealId ? 'Atualizar Refeição' : 'Salvar Refeição'}
+                        </>
+                      )}
+                    </button>
+                    {editingMealId && (
+                      <button
+                        onClick={cancelEdit}
+                        className="w-full bg-gray-200 text-gray-800 py-3 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+                      >
+                        Cancelar Edição
+                      </button>
                     )}
-                  </button>
+                  </div>
                 </div>
               )}
               
               {/* Calculadora de Insulina (se tiver carboidratos) */}
-              {dishTotals.carbohydrates && dishTotals.carbohydrates > 0 && (
-                <InsulinCalculator totalCarbs={dishTotals.carbohydrates} />
+              {showMealCalculator && dishTotals.carbohydrates && dishTotals.carbohydrates > 0 && (
+                <InsulinCalculator
+                  totalCarbs={dishTotals.carbohydrates}
+                  onClose={() => setShowMealCalculator(false)}
+                  onSave={(payload) => { setShowMealCalculator(false); finalizeSaveMeal(payload); }}
+                />
               )}
             </>
           )}
@@ -472,7 +555,7 @@ export default function NutricaoPage() {
           
           {/* Aba de Calculadora */}
           {activeTab === 'calculator' && (
-            <InsulinCalculator totalCarbs={0} />
+            <InsulinCalculator totalCarbs={0} onClose={() => setActiveTab('meal')} />
           )}
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic'
 import { useState } from "react";
+import { useRouter, usePathname } from 'next/navigation'
 import LayoutBase from "@/components/layout/LayoutBase";
 import { useHealth } from "@/contexts/HealthContext";
 import { 
@@ -62,6 +63,8 @@ interface ConfiguracoesIA {
 }
 
 export default function ConfiguracoesPage() {
+  const router = useRouter()
+  const pathname = usePathname()
   const { state, updateProfile } = useHealth();
   const [editandoPerfil, setEditandoPerfil] = useState(false);
   const [editandoIA, setEditandoIA] = useState(false);
@@ -137,7 +140,9 @@ export default function ConfiguracoesPage() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    if (pathname !== '/login') {
+      router.replace('/login')
+    }
   };
 
   const handleDeleteAccount = async () => {

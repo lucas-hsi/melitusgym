@@ -85,23 +85,27 @@ const MealHistory: React.FC<MealHistoryProps> = ({
     }
     
     if (error) {
+      // Mensagem neutra e profissional, sem expor erro técnico
       return (
-        <div className="bg-red-50 p-4 rounded-lg text-red-600 text-center">
-          <p>{error}</p>
+        <div className="bg-white/70 backdrop-blur-sm p-5 rounded-xl text-center border border-gray-200">
+          <p className="text-gray-700 text-sm">Não há dados para exibir agora.</p>
           <button
             onClick={loadMealHistory}
-            className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-sm transition-colors"
+            className="mt-3 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors text-gray-800"
           >
-            Tentar novamente
+            Recarregar
           </button>
         </div>
       );
     }
     
     if (mealLogs.length === 0) {
+      const emptyCopy = days <= 1
+        ? 'Hoje não foi anotado nenhuma refeição — anote a sua primeira refeição.'
+        : `Nenhuma refeição registrada nos últimos ${days} dias.`;
       return (
-        <div className="bg-gray-50 p-6 rounded-lg text-center">
-          <p className="text-gray-500">Nenhuma refeição registrada nos últimos {days} dias.</p>
+        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl text-center border border-gray-200">
+          <p className="text-gray-700 text-sm">{emptyCopy}</p>
         </div>
       );
     }
