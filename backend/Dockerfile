@@ -26,12 +26,8 @@ RUN pip install --prefer-binary --no-cache-dir --no-compile --only-binary=all -r
 # Copiar código da aplicação
 COPY . .
 
-# Copiar base TACO para dentro da imagem (build context deve conter o arquivo na raiz)
-# Em Railway, assegure que o contexto de build é o root do repositório
-COPY Taco-4a-Edicao.xlsx /app/Taco-4a-Edicao.xlsx
-
-# Definir caminho do arquivo TACO via variável de ambiente
-ENV TACO_FILE_PATH=/app/Taco-4a-Edicao.xlsx
+# Removido: cópia do XLSX TACO para a imagem.
+# A base TACO será populada via seed cloud a partir de CSV leve (taco_export.csv).
 
 # Criar usuário não-root para segurança
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
