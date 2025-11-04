@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
 import logging
 import os
+import csv
 from unicodedata import normalize
 from openpyxl import load_workbook
 from sqlmodel import Session, select
@@ -32,9 +33,20 @@ def _parse_float(val: Optional[str]) -> Optional[float]:
         return None
 
 def _map_headers(headers: List[str]) -> Dict[str, int]:
-    """Mapeia headers da TACO para colunas esperadas. Tenta identificar por palavras-chave."""
+    """Mapeia headers da TACO para colunas esperadas.
+
+    Suporta tanto os cabeçalhos originais (PT-BR, XLSX) quanto o CSV exportado
+    já normalizado (name_pt, energy_kcal_100g, etc.).
+    """
     mapping: Dict[str, int] = {}
     normalized = [_clean_text(h) for h in headers]
+
+    def find_exact(column_name: str) -> Optional[int]:
+        target = _clean_text(column_name)
+        for i, h in enumerate(normalized):
+            if h == target:
+                return i
+        return None
 
     def find_idx(*keywords) -> Optional[int]:
         for i, h in enumerate(normalized):
@@ -44,18 +56,25 @@ def _map_headers(headers: List[str]) -> Dict[str, int]:
                 return i
         return None
 
-    mapping["name_pt"] = find_idx("alimento") or find_idx("descricao") or find_idx("nome")
-    mapping["category_pt"] = find_idx("grupo") or find_idx("categoria")
+    # name/category
+    mapping["name_pt"] = (
+        find_exact("name_pt")
+        or find_idx("alimento")
+        or find_idx("descricao")
+        or find_idx("nome")
+    )
+    mapping["category_pt"] = find_exact("category_pt") or find_idx("grupo") or find_idx("categoria")
 
-    mapping["energy_kcal_100g"] = find_idx("energia", "kcal") or find_idx("kcal")
-    mapping["energy_kj_100g"] = find_idx("energia", "kj") or find_idx("kj")
-    mapping["carbohydrates_100g"] = find_idx("carbo", "g") or find_idx("carboidratos")
-    mapping["proteins_100g"] = find_idx("proteina")
-    mapping["fat_100g"] = find_idx("lipidio") or find_idx("gordura")
-    mapping["fiber_100g"] = find_idx("fibra")
-    mapping["sugars_100g"] = find_idx("acucar") or find_idx("açucar") or find_idx("sacarose")
-    mapping["sodium_mg_100g"] = find_idx("sodio") or find_idx("sódio")
-    mapping["glycemic_index"] = find_idx("indice", "glicemico") or find_idx("ig")
+    # nutrients
+    mapping["energy_kcal_100g"] = find_exact("energy_kcal_100g") or find_idx("energia", "kcal") or find_idx("kcal")
+    mapping["energy_kj_100g"] = find_exact("energy_kj_100g") or find_idx("energia", "kj") or find_idx("kj")
+    mapping["carbohydrates_100g"] = find_exact("carbohydrates_100g") or find_idx("carbo", "g") or find_idx("carboidratos")
+    mapping["proteins_100g"] = find_exact("proteins_100g") or find_idx("proteina")
+    mapping["fat_100g"] = find_exact("fat_100g") or find_idx("lipidio") or find_idx("gordura")
+    mapping["fiber_100g"] = find_exact("fiber_100g") or find_idx("fibra")
+    mapping["sugars_100g"] = find_exact("sugars_100g") or find_idx("acucar") or find_idx("açucar") or find_idx("sacarose")
+    mapping["sodium_mg_100g"] = find_exact("sodium_mg_100g") or find_idx("sodio") or find_idx("sódio")
+    mapping["glycemic_index"] = find_exact("glycemic_index") or find_idx("indice", "glicemico") or find_idx("ig")
 
     return mapping
 
@@ -169,4 +188,84 @@ def ingest_taco_excel(path: str) -> Dict[str, int]:
         session.commit()
 
     logger.info(f"TACO ingest finished: created={created}, updated={updated}")
+    return {"created": created, "updated": updated}
+
+
+def ingest_taco_csv(path: str) -> Dict[str, int]:
+    """Ingestão da TACO via CSV leve (taco_export.csv).
+
+    - Usa DictReader com headers já normalizados (compatíveis com a tabela `taco_foods`)
+    - Faz parsing robusto de números (vírgula/ponto, N/A)
+    - Upsert por `name_pt`
+    """
+    logger.info(f"TACO CSV ingest called for path: {path}")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Arquivo CSV não encontrado: {path}")
+
+    created = 0
+    updated = 0
+
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        headers = reader.fieldnames or []
+        if not headers or ("name_pt" not in headers):
+            raise ValueError("CSV inválido: header 'name_pt' ausente")
+
+        with Session(engine) as session:
+            for row in reader:
+                name_pt = (row.get("name_pt") or "").strip()
+                if not name_pt:
+                    continue
+
+                category_pt = (row.get("category_pt") or None)
+                energy_kcal_100g = _parse_float(row.get("energy_kcal_100g"))
+                energy_kj_100g = _parse_float(row.get("energy_kj_100g"))
+                carbohydrates_100g = _parse_float(row.get("carbohydrates_100g"))
+                proteins_100g = _parse_float(row.get("proteins_100g"))
+                fat_100g = _parse_float(row.get("fat_100g"))
+                fiber_100g = _parse_float(row.get("fiber_100g"))
+                sugars_100g = _parse_float(row.get("sugars_100g"))
+                sodium_mg_100g = _parse_float(row.get("sodium_mg_100g"))
+                glycemic_index = _parse_float(row.get("glycemic_index"))
+
+                stmt = select(TACOFood).where(TACOFood.name_pt == name_pt)
+                existing = session.exec(stmt).first()
+                if existing:
+                    existing.category_pt = category_pt
+                    existing.energy_kcal_100g = energy_kcal_100g
+                    existing.energy_kj_100g = energy_kj_100g
+                    existing.carbohydrates_100g = carbohydrates_100g
+                    existing.proteins_100g = proteins_100g
+                    existing.fat_100g = fat_100g
+                    existing.fiber_100g = fiber_100g
+                    existing.sugars_100g = sugars_100g
+                    existing.sodium_mg_100g = sodium_mg_100g
+                    existing.glycemic_index = glycemic_index
+                    session.add(existing)
+                    updated += 1
+                else:
+                    item = TACOFood(
+                        name_pt=name_pt,
+                        category_pt=category_pt,
+                        energy_kcal_100g=energy_kcal_100g,
+                        energy_kj_100g=energy_kj_100g,
+                        carbohydrates_100g=carbohydrates_100g,
+                        proteins_100g=proteins_100g,
+                        fat_100g=fat_100g,
+                        fiber_100g=fiber_100g,
+                        sugars_100g=sugars_100g,
+                        sodium_mg_100g=sodium_mg_100g,
+                        glycemic_index=glycemic_index,
+                    )
+                    session.add(item)
+                    created += 1
+
+                # Commit em lotes para performance
+                if (created + updated) % 200 == 0:
+                    session.commit()
+
+            # Commit final
+            session.commit()
+
+    logger.info(f"TACO CSV ingest finished: created={created}, updated={updated}")
     return {"created": created, "updated": updated}

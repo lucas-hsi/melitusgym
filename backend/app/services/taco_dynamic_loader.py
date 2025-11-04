@@ -71,7 +71,10 @@ class TACODynamicLoader:
         # Resolve path: prefer env var; else try project root CSV then XLSX
         root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
         env_path = os.getenv(taco_path_env)
-        default_csv = os.path.join(root, "Taco-4a-Edicao.csv")
+        # Preferir CSV leve gerado pelo ETL
+        default_csv = os.path.join(root, "taco_export.csv")
+        # Fallback para CSV original, se existir
+        legacy_csv = os.path.join(root, "Taco-4a-Edicao.csv")
         default_xlsx = os.path.join(root, "Taco-4a-Edicao.xlsx")
 
         logger.info(f"🔍 TACO Dynamic Loader - Resolvendo caminho do arquivo...")
@@ -80,7 +83,14 @@ class TACODynamicLoader:
         logger.info(f"📄 CSV padrão: {default_csv} (existe: {os.path.exists(default_csv)})")
         logger.info(f"📊 XLSX padrão: {default_xlsx} (existe: {os.path.exists(default_xlsx)})")
 
-        self.taco_file_path = env_path or (default_csv if os.path.exists(default_csv) else default_xlsx)
+        if env_path:
+            self.taco_file_path = env_path
+        elif os.path.exists(default_csv):
+            self.taco_file_path = default_csv
+        elif os.path.exists(legacy_csv):
+            self.taco_file_path = legacy_csv
+        else:
+            self.taco_file_path = default_xlsx
         
         if not os.path.exists(self.taco_file_path):
             logger.error(f"❌ TACO dynamic loader: arquivo não encontrado em '{self.taco_file_path}'")

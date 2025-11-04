@@ -12,8 +12,14 @@ export USE_SQLITE=false
 export ENVIRONMENT=production
 export LOG_LEVEL=${LOG_LEVEL:-INFO}
 
-# Default TACO path if not provided
-export TACO_FILE_PATH=${TACO_FILE_PATH:-./Taco-4a-Edicao.xlsx}
+# Default TACO path if not provided (prefer lightweight CSV)
+if [ -z "${TACO_FILE_PATH:-}" ]; then
+  if [ -f ./taco_export.csv ]; then
+    export TACO_FILE_PATH=./taco_export.csv
+  else
+    export TACO_FILE_PATH=./Taco-4a-Edicao.xlsx
+  fi
+fi
 
 # Railway provides PORT
 PORT=${PORT:-8000}
