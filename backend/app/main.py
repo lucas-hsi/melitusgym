@@ -90,7 +90,8 @@ async def lifespan(app: FastAPI):
         taco_loader = TACODynamicLoader()
         
         # Verificar se o arquivo TACO existe
-        taco_file_path = taco_loader._resolve_taco_file_path()
+        # Usa o caminho resolvido pelo próprio loader
+        taco_file_path = taco_loader.taco_file_path
         if not os.path.exists(taco_file_path):
             logger.warning(f"⚠️ Arquivo TACO não encontrado: {taco_file_path}")
             logger.warning("⚠️ Sistema funcionará com busca dinâmica apenas")

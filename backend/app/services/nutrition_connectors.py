@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 from app.models.taco_food import TACOFood
 from .database import engine
 from .taco_dynamic_loader import TACODynamicLoader
+from .tbca_connector import TBCAConnector
 
 logger = logging.getLogger(__name__)
 
@@ -72,9 +73,16 @@ class NutritionConnectorService:
     
     def __init__(self):
         self.taco_connector = TACOConnector()
+        self.tbca_connector = TBCAConnector()
     
     async def search_unified(self, term: str, page_size: int = 20) -> Dict[str, Any]:
-        """Busca usando exclusivamente a base TACO/TBCA local (PT-BR)."""
+        """Busca híbrida: prioriza local (cache/DB/arquivo) e faz fallback TBCA online.
+
+        - Primeiro consulta TACO local com o loader dinâmico
+        - Se não encontrar nada, usa TBCAConnector para scraping e normalização
+        - Sempre retorna itens já normalizados ao esquema NutritionItem
+        - Atualiza banco com dados externos (upsert) para reutilização futura
+        """
         results = {
             "term": term,
             "sources": [],
@@ -82,8 +90,19 @@ class NutritionConnectorService:
             "total_found": 0
         }
         taco_data = await self.taco_connector.search_foods(term, page_size)
-        results["sources"].append("taco_db")
-        results["items"].extend(taco_data.get("items", []))
-        results["total_found"] += taco_data.get("total_found", 0)
+        if taco_data.get("total_found", 0) > 0:
+            results["sources"].append("taco_db")
+            results["items"].extend(taco_data.get("items", []))
+            results["total_found"] += taco_data.get("total_found", 0)
+        else:
+            # Fallback: TBCA online
+            tbca_data = await self.tbca_connector.search_foods(term, page_size)
+            if tbca_data.get("total_found", 0) > 0:
+                results["sources"].append("tbca_online")
+                results["items"].extend(tbca_data.get("items", []))
+                results["total_found"] += tbca_data.get("total_found", 0)
+            else:
+                # sem resultados
+                results["sources"].append("not_found")
         
         return results

@@ -132,12 +132,17 @@ async def search_foods(
     page_size: int = Query(20, ge=1, le=50, description="Número de resultados"),
     sources: Optional[List[NutritionSource]] = Query(None, description="Fontes específicas")
 ):
-    """Busca exclusiva na base TACO/TBCA local (PT-BR)."""
+    """Busca híbrida priorizando base local (TACO) com fallback TBCA online.
+
+    - Consulta local: cache/DB/arquivo via TACODynamicLoader
+    - Se nada encontrado, faz scraping TBCA e normaliza
+    - Retorna fontes consultadas e tempo de busca
+    """
     
     start_time = datetime.now()
     
     try:
-        logger.info(f"Starting unified search - term: {term}, page_size: {page_size}")
+        logger.info(f"🔎 Busca híbrida - termo: {term}, page_size: {page_size}")
         
         # Realiza busca unificada
         search_result = await connector_service.search_unified(term, page_size)
@@ -155,8 +160,8 @@ async def search_foods(
         )
         
         logger.info(
-            f"Search completed - term: {term}, found: {response.total_found}, "
-            f"sources: {response.sources}, time: {search_time:.2f}ms"
+            f"✅ Busca concluída - termo: {term}, encontrados: {response.total_found}, "
+            f"fontes: {response.sources}, tempo: {search_time:.2f}ms"
         )
         
         return response
