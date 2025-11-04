@@ -25,6 +25,7 @@ export interface MealLog {
   glucose_measure_timing?: string;
   insulin_recommended_units?: number;
   insulin_applied_units?: number;
+  recorded_at: string;
   created_at: string;
   updated_at?: string;
 }

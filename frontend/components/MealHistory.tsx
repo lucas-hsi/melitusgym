@@ -151,68 +151,101 @@ const MealHistory: React.FC<MealHistoryProps> = ({
               </div>
             </div>
             
-            {/* Expanded Content */}
-            {expandedMealId === meal.id && (
-              <div className="p-4 border-t border-gray-100">
-                <div className="mb-4">
-                  <h5 className="font-medium text-gray-700 mb-2">Itens da Refeição</h5>
-                  <div className="space-y-2">
-                    {meal.items.map(item => (
-                      <div key={item.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                        <div>
-                          <div className="font-medium text-gray-800">{item.name}</div>
-                          <div className="text-sm text-gray-500">{item.grams}g</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-gray-600">
-                            {item.nutrients.carbohydrates?.toFixed(1) || '0'} g carbs
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {item.nutrients.energy_kcal?.toFixed(0) || '0'} kcal
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Nutrition Summary */}
-                <div className="bg-blue-50 p-3 rounded-lg mb-4">
-                  <h5 className="font-medium text-gray-700 mb-2">Resumo Nutricional</h5>
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div className="bg-white p-2 rounded-lg text-center">
-                      <div className="text-xs text-gray-500">Calorias</div>
-                      <div className="font-bold text-gray-800">
-                        {meal.total_nutrients.energy_kcal?.toFixed(0) || '0'} kcal
-                      </div>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg text-center">
-                      <div className="text-xs text-gray-500">Carboidratos</div>
-                      <div className="font-bold text-green-600">
-                        {meal.total_nutrients.carbohydrates?.toFixed(1) || '0'} g
-                      </div>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg text-center">
-                      <div className="text-xs text-gray-500">Proteínas</div>
-                      <div className="font-bold text-blue-600">
-                        {meal.total_nutrients.proteins?.toFixed(1) || '0'} g
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Notes */}
-                {meal.notes && (
+              {/* Expanded Content */}
+              {expandedMealId === meal.id && (
+                <div className="p-4 border-t border-gray-100">
                   <div className="mb-4">
-                    <div className="flex items-center text-sm text-gray-700 mb-1">
-                      <Info className="w-4 h-4 mr-1" />
-                      <span>Observações</span>
+                    <h5 className="font-medium text-gray-700 mb-2">Itens da Refeição</h5>
+                    <div className="space-y-2">
+                      {meal.items.map(item => (
+                        <div key={item.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                          <div>
+                            <div className="font-medium text-gray-800">{item.name}</div>
+                            <div className="text-sm text-gray-500">{item.grams}g</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-gray-600">
+                              {item.nutrients.carbohydrates?.toFixed(1) || '0'} g carbs
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {item.nutrients.energy_kcal?.toFixed(0) || '0'} kcal
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
-                      {meal.notes}
-                    </p>
                   </div>
-                )}
+
+                  {/* Nutrition Summary */}
+                  <div className="bg-blue-50 p-3 rounded-lg mb-4">
+                    <h5 className="font-medium text-gray-700 mb-2">Resumo Nutricional</h5>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div className="bg-white p-2 rounded-lg text-center">
+                        <div className="text-xs text-gray-500">Calorias</div>
+                        <div className="font-bold text-gray-800">
+                          {meal.total_nutrients.energy_kcal?.toFixed(0) || '0'} kcal
+                        </div>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg text-center">
+                        <div className="text-xs text-gray-500">Carboidratos</div>
+                        <div className="font-bold text-green-600">
+                          {meal.total_nutrients.carbohydrates?.toFixed(1) || '0'} g
+                        </div>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg text-center">
+                        <div className="text-xs text-gray-500">Proteínas</div>
+                        <div className="font-bold text-blue-600">
+                          {meal.total_nutrients.proteins?.toFixed(1) || '0'} g
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clinical Summary */}
+                  {(meal.glucose_value !== undefined || meal.insulin_applied_units !== undefined || meal.insulin_recommended_units !== undefined) && (
+                    <div className="bg-green-50 p-3 rounded-lg mb-4">
+                      <h5 className="font-medium text-gray-700 mb-2">Dados Clínicos</h5>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div className="bg-white p-2 rounded-lg text-center">
+                          <div className="text-xs text-gray-500">Glicemia</div>
+                          <div className="font-bold text-red-600">
+                            {meal.glucose_value !== undefined ? `${meal.glucose_value} mg/dL` : '—'}
+                          </div>
+                          {meal.glucose_measured && (
+                            <div className="text-[10px] text-gray-500 mt-1">{meal.glucose_measure_timing === 'before' ? 'antes' : meal.glucose_measure_timing === 'after' ? 'depois' : 'medida'}</div>
+                          )}
+                        </div>
+                        <div className="bg-white p-2 rounded-lg text-center">
+                          <div className="text-xs text-gray-500">Insulina Aplicada</div>
+                          <div className="font-bold text-purple-600">
+                            {meal.insulin_applied_units !== undefined ? `${meal.insulin_applied_units} U` : '—'}
+                          </div>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg text-center">
+                          <div className="text-xs text-gray-500">Insulina Recomendada</div>
+                          <div className="font-bold text-purple-600">
+                            {meal.insulin_recommended_units !== undefined ? `${meal.insulin_recommended_units} U` : '—'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500 text-center">
+                        Registrado: {mealLogService.formatDate(meal.recorded_at)} • {mealLogService.formatTime(meal.recorded_at)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {meal.notes && (
+                    <div className="mb-4">
+                      <div className="flex items-center text-sm text-gray-700 mb-1">
+                        <Info className="w-4 h-4 mr-1" />
+                        <span>Observações</span>
+                      </div>
+                      <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                        {meal.notes}
+                      </p>
+                    </div>
+                  )}
                 
                 {/* Actions */}
                 <div className="flex justify-end space-x-2 mt-4">
