@@ -1,7 +1,17 @@
 import axios, { AxiosInstance } from 'axios';
 
 // Determinar baseURL da API a partir do ambiente
-const RAW_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const resolveRawBaseUrl = (): string => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim().length > 0) return envUrl;
+  // Em produção, usar backend Railway por padrão se não houver variável definida
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://melitusgym-production.up.railway.app/api';
+  }
+  // Ambiente de desenvolvimento local
+  return 'http://127.0.0.1:8000';
+};
+const RAW_BASE_URL = resolveRawBaseUrl();
 
 // Normalizar baseURL para sempre conter "/api" e evitar barras duplicadas
 const trimTrailingSlash = (url: string) => url.replace(/\/+$/, '');

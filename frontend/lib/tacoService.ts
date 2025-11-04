@@ -108,7 +108,6 @@ interface ErrorResponse {
 }
 
 class TacoService {
-  private baseUrl = '/api';
 
   /**
    * Busca alimentos da base TACO
@@ -136,7 +135,7 @@ class TacoService {
       }
 
       // Endpoint oficial para busca TACO local/unificada
-      const response = await axios.get('/api/nutrition/v2/taco', {
+      const response = await axios.get('/nutrition/v2/taco', {
         params,
       });
 
@@ -170,7 +169,6 @@ class TacoService {
   }
 
   /**
-<<<<<<< HEAD
    * Busca alimentos na TACO usando web scraping (novo endpoint)
    * @param query Termo de busca (mínimo 2 caracteres)
    * @param limit Número máximo de resultados (1-50, padrão: 20)
@@ -188,7 +186,7 @@ class TacoService {
       }
 
 
-      const response = await axios.get('/api/taco/search', {
+      const response = await axios.get('/taco/search', {
         params: {
           query: query.trim(),
           limit
@@ -238,7 +236,7 @@ class TacoService {
   async searchFoods(term: string, pageSize: number = 20): Promise<TacoSearchResponse> {
     try {
       // Mantido por compatibilidade: redireciona para endpoint oficial
-      const response = await axios.get(`/api/nutrition/v2/taco`, {
+      const response = await axios.get(`/nutrition/v2/taco`, {
         params: {
           term,
           page_size: pageSize,
@@ -320,10 +318,7 @@ class TacoService {
   }
 
   /**
-   * Calcula nutrientes para uma porção específica
-=======
    * Calcula nutrição para uma porção específica usando endpoint do backend
->>>>>>> 8ec0140021debe97454f9572570fb9e70d123e4c
    * @param nutrientsBase Nutrientes base (por 100g)
    * @param portionValue Valor da porção
    * @param portionUnit Unidade da porção
@@ -337,7 +332,7 @@ class TacoService {
     baseUnit: string = '100g'
   ): Promise<CalculationResult> {
     try {
-      const response = await axios.post(`${this.baseUrl}/nutrition/v2/calc`, {
+      const response = await axios.post(`/nutrition/v2/calc`, {
         nutrients_base: nutrientsBase,
         portion_value: portionValue,
         portion_unit: portionUnit,

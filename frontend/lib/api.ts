@@ -1,7 +1,15 @@
 import axios from "axios";
 
-// Usar variável de ambiente para baseURL, com fallback local
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+// Resolver baseURL da API considerando produção e desenvolvimento
+const resolveApiBaseUrl = (): string => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim().length > 0) return envUrl;
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://melitusgym-production.up.railway.app/api';
+  }
+  return "http://127.0.0.1:8000/api";
+};
+const API_BASE_URL = resolveApiBaseUrl();
 
 // Bloquear uso de localhost em produção para evitar apontamento incorreto
 if (

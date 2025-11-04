@@ -39,7 +39,7 @@ export interface MealLogUpdate {
 }
 
 class MealLogService {
-  private baseUrl = '/api/meal-logs';
+  private baseUrl = '/meal-logs';
 
   /**
    * Cria um novo registro de refeição
