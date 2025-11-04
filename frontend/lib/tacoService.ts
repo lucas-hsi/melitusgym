@@ -108,6 +108,12 @@ interface ErrorResponse {
 }
 
 class TacoService {
+  private baseUrl: string;
+
+  constructor() {
+    // Prefixo padrão dos endpoints TACO no backend
+    this.baseUrl = '/nutrition/v2/taco';
+  }
 
   /**
    * Busca alimentos da base TACO
