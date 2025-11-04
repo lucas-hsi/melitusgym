@@ -5,8 +5,9 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, nutrition_web, admin, meal_logs
 from app.services.database import create_db_and_tables, engine
+from app.services.schema_guard import log_schema_status_on_startup
 from app.services.taco_dynamic_loader import TACODynamicLoader
-from app.services.etl_taco import ingest_taco_excel
+from app.services.etl_taco import ingest_taco_excel, ingest_taco_csv
 import os
 import asyncio
 from dotenv import load_dotenv
@@ -45,6 +46,8 @@ async def lifespan(app: FastAPI):
     # Criar tabelas do banco de dados
     try:
         create_db_and_tables()
+        # Verificar e migrar schema de meal_logs automaticamente
+        log_schema_status_on_startup()
         logger.info("✅ Banco de dados inicializado com sucesso")
     except Exception as e:
         logger.error(f"❌ Erro ao inicializar banco de dados: {e}")
@@ -73,13 +76,15 @@ async def lifespan(app: FastAPI):
                 env_taco_path = os.getenv("TACO_FILE_PATH")
                 taco_file_paths = [
                     env_taco_path if env_taco_path else None,
-                    # Path relativo ao arquivo atual (backend/app/main.py -> ../../Taco-4a-Edicao.xlsx)
+                    # Preferir CSV leve gerado pelo ETL
+                    os.path.join(os.path.dirname(__file__), '../../taco_export.csv'),
+                    "/app/taco_export.csv",
+                    "/app/backend/taco_export.csv",
+                    "taco_export.csv",
+                    # Fallbacks para XLSX original
                     os.path.join(os.path.dirname(__file__), '../../Taco-4a-Edicao.xlsx'),
-                    # Fallback: root do projeto Docker
                     "/app/Taco-4a-Edicao.xlsx",
-                    # Fallback: backend directory
                     "/app/backend/Taco-4a-Edicao.xlsx",
-                    # Fallback: working directory
                     "Taco-4a-Edicao.xlsx"
                 ]
 
@@ -95,7 +100,11 @@ async def lifespan(app: FastAPI):
                         break
 
                 if taco_file_path:
-                    stats = ingest_taco_excel(taco_file_path)
+                    # Escolher função de ingestão conforme extensão
+                    if taco_file_path.lower().endswith('.csv'):
+                        stats = ingest_taco_csv(taco_file_path)
+                    else:
+                        stats = ingest_taco_excel(taco_file_path)
                     logger.info(
                         f"✅ Ingestão do arquivo TACO concluída - created={stats.get('created', 0)}, "
                         f"updated={stats.get('updated', 0)}"

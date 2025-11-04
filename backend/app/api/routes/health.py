@@ -8,6 +8,7 @@ import psutil
 import os
 
 from app.services.database import get_session, get_db_stats, health_check
+from app.services.schema_guard import get_meal_logs_schema_status
 from app.core.logging_config import get_logger
 from app.core.cache import MemoryCache
 
@@ -285,4 +286,18 @@ async def detailed_health_check(session: Session = Depends(get_session)):
                 "timestamp": datetime.utcnow().isoformat()
             },
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+
+
+@router.get("/health/schema")
+async def schema_health_check():
+    """Verifica o status do schema da tabela meal_logs (sem migração)."""
+    try:
+        status = get_meal_logs_schema_status()
+        return JSONResponse(content={"meal_logs": status, "timestamp": datetime.utcnow().isoformat()}, status_code=200)
+    except Exception as e:
+        logger.error(f"Schema status error: {str(e)}")
+        return JSONResponse(
+            content={"error": str(e), "timestamp": datetime.utcnow().isoformat()},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

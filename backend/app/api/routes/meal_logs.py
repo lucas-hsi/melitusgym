@@ -8,8 +8,10 @@ from ...schemas.meal_log import MealLogCreate, MealLogRead, MealLogUpdate
 from ...services.database import get_session
 from ...services.auth import get_current_user
 from ...models.user import User
+from ...core.logging_config import get_logger
 
 router = APIRouter(prefix="/meal-logs", tags=["Meal Logs"])
+logger = get_logger("api.meal_logs")
 
 
 @router.post("/", response_model=MealLogRead)
@@ -19,18 +21,47 @@ async def create_meal_log(
     session: Session = Depends(get_session)
 ):
     """Cria um novo registro de refeição"""
+    # Garantir que os itens estejam em formato serializável (lista de dicts)
+    try:
+        serialized_items = [item.dict() for item in meal_log.items]
+    except Exception:
+        # Caso já venham como dicts
+        serialized_items = meal_log.items
+
     db_meal_log = MealLog(
-        user_id=current_user.id,
+        user_id=str(current_user.id),
         meal_time=meal_log.meal_time,
         meal_date=meal_log.meal_date,
-        items=meal_log.items,
+        items=serialized_items,
         total_nutrients=meal_log.total_nutrients,
-        notes=meal_log.notes
+        notes=meal_log.notes,
+        carbohydrates_total=meal_log.carbohydrates_total if meal_log.carbohydrates_total is not None else (
+            float(meal_log.total_nutrients.get("carbohydrates", 0)) if isinstance(meal_log.total_nutrients, dict) else None
+        ),
+        glucose_value=meal_log.glucose_value,
+        glucose_measured=meal_log.glucose_measured or False,
+        glucose_measure_timing=meal_log.glucose_measure_timing,
+        insulin_recommended_units=meal_log.insulin_recommended_units,
+        insulin_applied_units=meal_log.insulin_applied_units,
+        recorded_at=meal_log.recorded_at or datetime.now()
     )
     
     session.add(db_meal_log)
     session.commit()
     session.refresh(db_meal_log)
+
+    # Auditoria
+    try:
+        logger.info(
+            f"MEAL_LOG_CREATE user_id={current_user.id} id={db_meal_log.id} "
+            f"meal_time={db_meal_log.meal_time} carbs_total={db_meal_log.carbohydrates_total} "
+            f"glucose_value={db_meal_log.glucose_value} glucose_measured={db_meal_log.glucose_measured} "
+            f"glucose_timing={db_meal_log.glucose_measure_timing} insulin_rec={db_meal_log.insulin_recommended_units} "
+            f"insulin_applied={db_meal_log.insulin_applied_units} recorded_at={db_meal_log.recorded_at}"
+        )
+    except Exception:
+        # Evitar que falhas de logging quebrem a request
+        pass
     
     return db_meal_log
 
@@ -46,7 +77,7 @@ async def get_meal_logs(
     session: Session = Depends(get_session)
 ):
     """Obtém registros de refeição do usuário atual"""
-    query = select(MealLog).where(MealLog.user_id == current_user.id)
+    query = select(MealLog).where(MealLog.user_id == str(current_user.id))
     
     if start_date:
         query = query.where(MealLog.meal_date >= start_date)
@@ -60,6 +91,13 @@ async def get_meal_logs(
     query = query.order_by(MealLog.meal_date.desc()).offset(offset).limit(limit)
     
     results = session.exec(query).all()
+    # Auditoria leve (metric)
+    try:
+        logger.debug(
+            f"MEAL_LOG_LIST user_id={current_user.id} count={len(results)} meal_time={meal_time or 'any'}"
+        )
+    except Exception:
+        pass
     return results
 
 
@@ -73,11 +111,17 @@ async def get_recent_meal_logs(
     start_date = datetime.now() - timedelta(days=days)
     
     query = select(MealLog).where(
-        MealLog.user_id == current_user.id,
+        MealLog.user_id == str(current_user.id),
         MealLog.meal_date >= start_date
     ).order_by(MealLog.meal_date.desc())
     
     results = session.exec(query).all()
+    try:
+        logger.debug(
+            f"MEAL_LOG_RECENT user_id={current_user.id} days={days} count={len(results)}"
+        )
+    except Exception:
+        pass
     return results
 
 
@@ -93,9 +137,15 @@ async def get_meal_log(
     if not meal_log:
         raise HTTPException(status_code=404, detail="Registro de refeição não encontrado")
     
-    if meal_log.user_id != current_user.id:
+    if meal_log.user_id != str(current_user.id):
         raise HTTPException(status_code=403, detail="Acesso negado a este registro")
     
+    try:
+        logger.debug(
+            f"MEAL_LOG_GET user_id={current_user.id} id={meal_log_id}"
+        )
+    except Exception:
+        pass
     return meal_log
 
 
@@ -112,7 +162,7 @@ async def update_meal_log(
     if not db_meal_log:
         raise HTTPException(status_code=404, detail="Registro de refeição não encontrado")
     
-    if db_meal_log.user_id != current_user.id:
+    if db_meal_log.user_id != str(current_user.id):
         raise HTTPException(status_code=403, detail="Acesso negado a este registro")
     
     # Atualiza apenas os campos fornecidos
@@ -126,6 +176,14 @@ async def update_meal_log(
     session.add(db_meal_log)
     session.commit()
     session.refresh(db_meal_log)
+
+    try:
+        logger.info(
+            f"MEAL_LOG_UPDATE user_id={current_user.id} id={db_meal_log.id} "
+            f"meal_time={db_meal_log.meal_time} carbs_total={db_meal_log.total_nutrients.get('carbohydrates', 0)}"
+        )
+    except Exception:
+        pass
     
     return db_meal_log
 
@@ -142,10 +200,17 @@ async def delete_meal_log(
     if not db_meal_log:
         raise HTTPException(status_code=404, detail="Registro de refeição não encontrado")
     
-    if db_meal_log.user_id != current_user.id:
+    if db_meal_log.user_id != str(current_user.id):
         raise HTTPException(status_code=403, detail="Acesso negado a este registro")
     
     session.delete(db_meal_log)
     session.commit()
     
+    try:
+        logger.info(
+            f"MEAL_LOG_DELETE user_id={current_user.id} id={meal_log_id}"
+        )
+    except Exception:
+        pass
+
     return None
