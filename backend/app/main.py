@@ -4,12 +4,13 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from datetime import datetime
 from app.api.routes import health, auth, clinical, alarms, nutrition, nutrition_v2, nutrition_web, admin, meal_logs
-from app.services.database import create_db_and_tables
+from app.services.database import create_db_and_tables, engine
 from app.services.taco_dynamic_loader import TACODynamicLoader
 from app.services.etl_taco import ingest_taco_excel
 import os
 import asyncio
 from dotenv import load_dotenv
+from sqlmodel import Session, text
 # Carregar variáveis de ambiente
 load_dotenv()
 
@@ -49,38 +50,54 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Erro ao inicializar banco de dados: {e}")
         raise
     
-    # Ingestão automática da TACO em produção Railway
+    # Ingestão automática da TACO em produção Railway (com verificação de duplicidade)
     if os.getenv("ENVIRONMENT") == "production":
         try:
-            logger.info("📊 Iniciando ingestão automática da base TACO...")
-            
-            # Busca robusta do arquivo TACO para ambiente cloud/Docker
-            taco_file_paths = [
-                # Path relativo ao arquivo atual (backend/app/main.py -> ../../Taco-4a-Edicao.xlsx)
-                os.path.join(os.path.dirname(__file__), '../../Taco-4a-Edicao.xlsx'),
-                # Fallback: root do projeto Docker
-                "/app/Taco-4a-Edicao.xlsx",
-                # Fallback: backend directory
-                "/app/backend/Taco-4a-Edicao.xlsx",
-                # Fallback: working directory
-                "Taco-4a-Edicao.xlsx"
-            ]
-            
-            taco_file_path = None
-            for path in taco_file_paths:
-                resolved_path = os.path.abspath(path)
-                logger.info(f"🔍 Tentando path TACO: {resolved_path}")
-                if os.path.exists(resolved_path):
-                    taco_file_path = resolved_path
-                    logger.info(f"✅ Arquivo TACO encontrado: {taco_file_path}")
-                    break
-            
-            if taco_file_path:
-                ingest_taco_excel(taco_file_path)
-                logger.info("✅ Ingestão automática da TACO concluída com sucesso")
-            else:
-                logger.warning(f"⚠️ Arquivo TACO não encontrado em nenhum dos paths tentados")
-                logger.warning(f"⚠️ Paths tentados: {taco_file_paths}")
+            # Verificar se tabela já possui dados para evitar duplicidade
+            ingest_needed = True
+            try:
+                with Session(engine) as session:
+                    count = session.exec(text("SELECT COUNT(*) FROM taco_foods")).first() or 0
+                    force_ingest = os.getenv("FORCE_TACO_INGEST", "false").lower() == "true"
+                    if count > 0 and not force_ingest:
+                        ingest_needed = False
+                        logger.info(f"ℹ️ Tabela 'taco_foods' já possui {count} registros; pulando ingestão automática.")
+            except Exception as e:
+                logger.warning(f"⚠️ Falha ao verificar tabela TACO: {e}. Prosseguindo com ingestão se arquivo existir.")
+
+            if ingest_needed:
+                logger.info("📊 Ingestão do arquivo TACO iniciada...")
+
+                # Busca robusta do arquivo TACO para ambiente cloud/Docker
+                taco_file_paths = [
+                    # Path relativo ao arquivo atual (backend/app/main.py -> ../../Taco-4a-Edicao.xlsx)
+                    os.path.join(os.path.dirname(__file__), '../../Taco-4a-Edicao.xlsx'),
+                    # Fallback: root do projeto Docker
+                    "/app/Taco-4a-Edicao.xlsx",
+                    # Fallback: backend directory
+                    "/app/backend/Taco-4a-Edicao.xlsx",
+                    # Fallback: working directory
+                    "Taco-4a-Edicao.xlsx"
+                ]
+
+                taco_file_path = None
+                for path in taco_file_paths:
+                    resolved_path = os.path.abspath(path)
+                    logger.info(f"🔍 Tentando path TACO: {resolved_path}")
+                    if os.path.exists(resolved_path):
+                        taco_file_path = resolved_path
+                        logger.info(f"✅ Arquivo TACO encontrado: {taco_file_path}")
+                        break
+
+                if taco_file_path:
+                    stats = ingest_taco_excel(taco_file_path)
+                    logger.info(
+                        f"✅ Ingestão do arquivo TACO concluída - created={stats.get('created', 0)}, "
+                        f"updated={stats.get('updated', 0)}"
+                    )
+                else:
+                    logger.warning("⚠️ Arquivo TACO não encontrado em nenhum dos paths tentados")
+                    logger.warning(f"⚠️ Paths tentados: {taco_file_paths}")
         except Exception as e:
             logger.warning(f"⚠️ Erro na ingestão automática da TACO (não crítico): {e}")
     
