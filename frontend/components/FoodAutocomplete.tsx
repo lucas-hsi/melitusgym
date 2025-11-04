@@ -72,11 +72,11 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
             return;
           }
         } catch (error) {
-          console.warn('Busca local falhou, tentando web scraping...', error);
+          console.warn('Busca local falhou, tentando TBCA online...', error);
         }
       }
 
-      // Se não encontrou localmente e busca online está habilitada, tenta web scraping
+      // Se não encontrou localmente e busca online está habilitada, tenta TBCA online
       if ((searchSource === 'online' || searchSource === 'both') && foundItems.length === 0) {
         try {
           const onlineResponse = await tacoService.searchTacoOnline(searchTerm, 20);
@@ -95,7 +95,7 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
           }
         } catch (error: any) {
           console.error('Busca online falhou:', error);
-          setErrorMessage(error.message || 'Erro ao buscar alimentos online');
+          setErrorMessage(error.message || 'Erro ao buscar alimentos (TBCA online)');
         }
       }
 
@@ -103,6 +103,7 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
       if (foundItems.length === 0) {
         setResults([]);
         setIsOpen(true);
+        setErrorMessage('Nenhum alimento encontrado. source: not_found');
       }
 
     } catch (error) {
@@ -224,7 +225,12 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
               >
                 <div className="flex items-start justify-between">
                   <div className="font-medium text-gray-800">{food.name}</div>
-                  {food.source === 'taco_online' && (
+                  {food.source?.startsWith('taco') && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full flex-shrink-0">
+                      Local
+                    </span>
+                  )}
+                  {food.source === 'tbca_online' && (
                     <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full flex-shrink-0">
                       Online
                     </span>
@@ -257,9 +263,11 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
           ) : (
             <div className="text-gray-500">
               <p>Nenhum alimento encontrado</p>
+              <p className="text-xs text-gray-400 mt-1">source: not_found</p>
               <p className="text-xs text-gray-400 mt-1">
-                Buscando em: base local {searchSource === 'both' ? '+ web scraping' : ''}
+                Buscando em: base oficial local {searchSource === 'both' ? '+ TBCA online' : ''}
               </p>
+              <p className="text-xs text-gray-400 mt-1">Tente outro termo ou variações.</p>
             </div>
           )}
         </div>

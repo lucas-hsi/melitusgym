@@ -135,7 +135,8 @@ class TacoService {
         params.category = filters.category;
       }
 
-      const response = await axios.get('/search-web', {
+      // Endpoint oficial para busca TACO local/unificada
+      const response = await axios.get('/api/nutrition/v2/taco', {
         params,
       });
 
@@ -186,6 +187,7 @@ class TacoService {
         throw new Error('O limite deve estar entre 1 e 50');
       }
 
+
       const response = await axios.get('/api/taco/search', {
         params: {
           query: query.trim(),
@@ -214,7 +216,7 @@ class TacoService {
   convertTacoOnlineToTacoFood(item: TacoOnlineSearchResponse['items'][0]): TacoFood {
     return {
       id: `taco_online_${item.nome.toLowerCase().replace(/\s+/g, '_')}`,
-      source: 'taco_online',
+      source: 'tbca_online',
       name: item.nome,
       category: item.categoria,
       nutrients_per_100g: {
@@ -235,10 +237,11 @@ class TacoService {
    */
   async searchFoods(term: string, pageSize: number = 20): Promise<TacoSearchResponse> {
     try {
-      const response = await axios.get(`${this.baseUrl}/search`, {
+      // Mantido por compatibilidade: redireciona para endpoint oficial
+      const response = await axios.get(`/api/nutrition/v2/taco`, {
         params: {
           term,
-          page_size: pageSize
+          page_size: pageSize,
         }
       });
       return response.data;
@@ -263,7 +266,7 @@ class TacoService {
     portionUnit: string
   ): Promise<ItemWithCalculation> {
     try {
-      const response = await axios.get(`${this.baseUrl}/item`, {
+      const response = await axios.get(`${this.baseUrl}/nutrition/v2/item`, {
         params: {
           id,
           source,
