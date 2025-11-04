@@ -225,15 +225,7 @@ const FoodAutocomplete: React.FC<FoodAutocompleteProps> = ({
           className="w-full pl-10 pr-28 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm"
           aria-label="Buscar alimento"
         />
-        {query && (
-          <button
-            onClick={handleClear}
-            className="absolute right-24 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Limpar busca"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
+        {/* Removido botão de limpar (ícone X) conforme solicitação */}
         <button
           onClick={triggerSearch}
           disabled={query.trim().length < 2 || isLoading}

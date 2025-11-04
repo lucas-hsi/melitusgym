@@ -23,6 +23,7 @@ import MealHistory from "@/components/MealHistory";
 // Serviços
 import tacoService, { TacoFood, TacoNutrient } from "@/lib/tacoService";
 import mealLogService, { MealLogCreate, MealLog } from "@/lib/mealLogService";
+import { Toaster, toast } from "react-hot-toast";
 
 // Tipos
 interface CurrentDishItem {
@@ -207,7 +208,15 @@ export default function NutricaoPage() {
           nutrients: item.calculatedNutrients
         })),
         total_nutrients: dishTotals,
-        notes: combinedNotes || undefined
+        notes: combinedNotes || undefined,
+        // Mapear metadados clínicos para campos dedicados no backend
+        carbohydrates_total: insulin.totalCarbs ?? dishTotals.carbohydrates ?? 0,
+        glucose_value: insulin.glucose,
+        glucose_measured: insulin.measured ?? false,
+        glucose_measure_timing: insulin.timing,
+        insulin_recommended_units: insulin.suggestedDose,
+        insulin_applied_units: insulin.usedDose,
+        recorded_at: new Date().toISOString()
       };
 
       // Criar ou atualizar refeição conforme modo
@@ -231,12 +240,14 @@ export default function NutricaoPage() {
         type: 'success',
         text: editingMealId ? 'Refeição atualizada com sucesso!' : 'Refeição salva com sucesso!'
       });
+      toast.success(editingMealId ? 'Refeição atualizada com sucesso!' : 'Refeição salva com sucesso!');
       setActiveTab('history');
     } catch (error) {
       console.error('Erro ao salvar refeição:', error);
       // Garantir fechamento da calculadora também em caso de erro
       setShowMealCalculator(false);
       setMessage({ type: 'error', text: 'Não foi possível salvar a refeição.' });
+      toast.error('Não foi possível salvar a refeição.');
     } finally {
       setIsSaving(false);
     }
@@ -291,6 +302,7 @@ export default function NutricaoPage() {
   const cancelEdit = () => {
     setEditingMealId(null);
     setMessage({ type: 'info', text: 'Modo edição cancelado.' });
+    toast('Modo edição cancelado.');
   };
 
   // Enriquecer alimento com dados da TBCA se macros estiverem ausentes
@@ -365,7 +377,8 @@ export default function NutricaoPage() {
 
   return (
     <LayoutBase>
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4 pb-28">
+        <Toaster position="top-center" />
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Nutrição</h1>
@@ -507,11 +520,11 @@ export default function NutricaoPage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className={editingMealId ? "grid grid-cols-2 gap-3" : "flex justify-center"}>
                     <button
                       onClick={handleSaveMeal}
                       disabled={isSaving}
-                      className="w-full bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`${editingMealId ? 'w-full' : 'w-auto'} bg-green-500 text-white py-3 px-6 rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {isSaving ? (
                         <>

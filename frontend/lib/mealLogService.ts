@@ -18,6 +18,13 @@ export interface MealLog {
   items: MealLogItem[];
   total_nutrients: TacoNutrient;
   notes?: string;
+  // Campos clínicos
+  carbohydrates_total?: number;
+  glucose_value?: number;
+  glucose_measured?: boolean;
+  glucose_measure_timing?: string;
+  insulin_recommended_units?: number;
+  insulin_applied_units?: number;
   created_at: string;
   updated_at?: string;
 }
@@ -28,6 +35,14 @@ export interface MealLogCreate {
   items: MealLogItem[];
   total_nutrients: TacoNutrient;
   notes?: string;
+  // Campos clínicos opcionais na criação
+  carbohydrates_total?: number;
+  glucose_value?: number;
+  glucose_measured?: boolean;
+  glucose_measure_timing?: string;
+  insulin_recommended_units?: number;
+  insulin_applied_units?: number;
+  recorded_at?: string;
 }
 
 export interface MealLogUpdate {
@@ -36,6 +51,14 @@ export interface MealLogUpdate {
   items?: MealLogItem[];
   total_nutrients?: TacoNutrient;
   notes?: string;
+  // Campos clínicos opcionais na atualização
+  carbohydrates_total?: number;
+  glucose_value?: number;
+  glucose_measured?: boolean;
+  glucose_measure_timing?: string;
+  insulin_recommended_units?: number;
+  insulin_applied_units?: number;
+  recorded_at?: string;
 }
 
 class MealLogService {
