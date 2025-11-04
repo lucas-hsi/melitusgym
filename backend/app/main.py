@@ -69,7 +69,10 @@ async def lifespan(app: FastAPI):
                 logger.info("📊 Ingestão do arquivo TACO iniciada...")
 
                 # Busca robusta do arquivo TACO para ambiente cloud/Docker
+                # Preferir caminho definido via variável de ambiente
+                env_taco_path = os.getenv("TACO_FILE_PATH")
                 taco_file_paths = [
+                    env_taco_path if env_taco_path else None,
                     # Path relativo ao arquivo atual (backend/app/main.py -> ../../Taco-4a-Edicao.xlsx)
                     os.path.join(os.path.dirname(__file__), '../../Taco-4a-Edicao.xlsx'),
                     # Fallback: root do projeto Docker
@@ -82,6 +85,8 @@ async def lifespan(app: FastAPI):
 
                 taco_file_path = None
                 for path in taco_file_paths:
+                    if not path:
+                        continue
                     resolved_path = os.path.abspath(path)
                     logger.info(f"🔍 Tentando path TACO: {resolved_path}")
                     if os.path.exists(resolved_path):
