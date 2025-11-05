@@ -1,0 +1,7 @@
+﻿feat(nutricao): toasts, ajuste mobile e centralizacao do botao
+
+- adiciona Toaster e mensagens de sucesso/erro/cancelamento na página Nutrição
+- aumenta padding inferior (pb-28) para evitar overlap com BottomNav
+- centraliza botão "Salvar Refeição" quando não há edição ativa
+- remove botão de limpar (ícone X) do autocomplete
+- pequenos ajustes em mealLogService
