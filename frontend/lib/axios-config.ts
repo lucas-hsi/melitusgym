@@ -3,12 +3,20 @@ import axios, { AxiosInstance } from 'axios';
 // Determinar baseURL da API a partir do ambiente
 const resolveRawBaseUrl = (): string => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim().length > 0) return envUrl;
-  // Em produção, usar backend Railway por padrão se não houver variável definida
-  if (process.env.NODE_ENV === 'production') {
+
+  // Em produção, a URL da Vercel já define o ambiente.
+  // Forçar HTTPS para garantir a segurança.
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+    if (envUrl) {
+      return envUrl.replace('http://', 'https://');
+    }
     return 'https://melitusgym-production.up.railway.app/api';
   }
+
   // Ambiente de desenvolvimento local
+  if (envUrl) {
+    return envUrl;
+  }
   return 'http://127.0.0.1:8000/api';
 };
 const RAW_BASE_URL = resolveRawBaseUrl();
