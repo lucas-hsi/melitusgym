@@ -46,7 +46,7 @@ export default function LayoutBase({ title, children, showDaySelector = true, si
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="flex-1 px-4 pb-20"
+        className="flex-1 px-4 pb-32"
       >
         {children}
       </motion.main>

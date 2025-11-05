@@ -22,7 +22,7 @@ export function BottomNav() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 120 }}
-      className="fixed bottom-6 left-6 right-6 bg-white/20 backdrop-blur-xl border border-white/30 shadow-2xl rounded-3xl flex justify-center items-center py-3 px-6 z-50"
+      className="fixed bottom-0 left-0 w-full bg-white/60 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] flex justify-around items-center py-3 z-50"
     >
       {routes.map(({ path, icon: Icon, label }) => {
         const active = pathname === path;
