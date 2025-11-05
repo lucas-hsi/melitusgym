@@ -146,6 +146,10 @@ PIPFILE.lock
 healthtrack.db
 backend/healthtrack.db-shm
 backend/healthtrack.db-wal
+*.db-shm
+*.db-wal
+backend/*.db-shm
+backend/*.db-wal
 
 # Allow tracking specific frontend lib files
 !frontend/lib/api.ts
@@ -160,6 +164,10 @@ Dockerfile.prod
 
 # Local development
 .local
+
+# Local logs
+enrich_log.txt
+commit-msg.txt
 
 # Package manager lock files (keep package-lock.json for consistency)
 yarn.lock
