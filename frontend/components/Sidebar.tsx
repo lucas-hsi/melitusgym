@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 
@@ -50,6 +50,23 @@ export default function Sidebar({ isOpen, onToggle, user }: SidebarProps) {
     router.push('/login')
   }
 
+  // Bloqueia scroll global quando o Sidebar está aberto (mobile-first)
+  useEffect(() => {
+    const body = document.body
+    const html = document.documentElement
+    if (isOpen) {
+      body.classList.add('overflow-hidden')
+      html.classList.add('overflow-hidden')
+    } else {
+      body.classList.remove('overflow-hidden')
+      html.classList.remove('overflow-hidden')
+    }
+    return () => {
+      body.classList.remove('overflow-hidden')
+      html.classList.remove('overflow-hidden')
+    }
+  }, [isOpen])
+
   return (
     <>
       {/* Overlay */}
@@ -62,10 +79,10 @@ export default function Sidebar({ isOpen, onToggle, user }: SidebarProps) {
       
       {/* Mobile Sidebar */}
       <div className={`
-        fixed top-0 left-0 h-full w-72 bg-gradient-to-br from-purple-900/95 to-blue-900/95 backdrop-blur-xl
-        transform transition-transform duration-300 ease-in-out z-50
+        fixed top-0 left-0 h-screen w-72 bg-gradient-to-br from-purple-900/95 to-blue-900/95 backdrop-blur-xl
+        transform transition-transform duration-300 ease-in-out z-50 overscroll-none
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        shadow-2xl border-r border-white/20
+        shadow-2xl border-r border-white/20 flex flex-col
       `}>
         {/* Header */}
         <div className="p-6 border-b border-white/10">
@@ -106,7 +123,7 @@ export default function Sidebar({ isOpen, onToggle, user }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-2">
             {menuItems.map((item, index) => {
               const isActive = pathname === item.href || (pathname && pathname.startsWith(item.href + '/'))
